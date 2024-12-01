@@ -1,7 +1,7 @@
-includes = include_directories([ 'include' ])
+includes = include_directories([ 'src' ])
 
 llvm_iz_sources = files(
-    'src/codegen.c',
+    'src/llvm/backend.c',
     'src/map.c'
 )
 
@@ -16,17 +16,16 @@ llvm_iz_dep = declare_dependency(
     include_directories: includes
 )
 
-
-llvm_iz_test = static_library('llvmiz_test', 
+llvm_iz_test = static_library('llvmiz_test',
     llvm_iz_sources,
     c_args : ['-DUNIT_TESTING' ],
-    dependencies: [ iz_dep, llvm ],
+    dependencies: [ iz_dep_test, llvm ],
     include_directories: includes
 )
 
 llvm_iz_dep_test = declare_dependency(
-    dependencies: [ iz_dep, llvm ],
     link_with: llvm_iz_test,
+    dependencies: [ iz_dep_test, llvm ],
     include_directories: includes
 )
 

@@ -1,0 +1,35 @@
+bool int_lt(int lhs, int rhs)
+    return lhs < rhs;
+
+bool int_le(int lhs, int rhs)
+    return lhs <= rhs;
+
+bool int_gt(int lhs, int rhs)
+    return lhs > rhs;
+
+bool int_ge(int lhs, int rhs)
+    return lhs >= rhs;
+
+bool int_eq(int lhs, int rhs)
+    return lhs == rhs;
+
+bool int_ne(int lhs, int rhs)
+    return lhs != rhs;
+
+int fib(int n)
+{
+    if (n < 2)
+        return n;
+    return fib(n - 1) + fib(n - 2);
+}
+
+int fib_else(int n)
+{
+    if (n < 2)
+        return n;
+    else
+        return fib(n - 1) + fib(n - 2);
+}
+
+int three()
+    return 1 + 2 * 2 / 2 % 2;

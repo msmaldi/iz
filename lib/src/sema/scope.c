@@ -42,6 +42,7 @@ bool scope_add(scope_t scope, declaration_t declaration)
         return false;
 
     scope->declaration_s = array_add(scope->declaration_s, declaration);
+
     return true;
 }
 
@@ -52,7 +53,7 @@ declaration_t scope_find(scope_t scope, span_t name)
 
     declaration_t declaration = find(scope->declaration_s, name);
     if (declaration != NULL)
-        return declaration;
+       return declaration;
 
     return scope_find(scope->parent, name);
 }

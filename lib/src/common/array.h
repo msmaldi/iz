@@ -25,7 +25,7 @@ size_t    array_capacity(array_t array);
 size_t    array_size(array_t array);
 
 array_t   array_add_object(array_t array, address_t object, size_t object_size);
-#define   array_add(array, object) array_add_object(array, &object, sizeof(*array))
+#define   array_add(array, object) array_add_object(array, &object, sizeof(object))
 
 array_t   array_shrink_object(array_t array, size_t object_size);
 #define   array_shrink(array) array_shrink_object(array, sizeof(*array))

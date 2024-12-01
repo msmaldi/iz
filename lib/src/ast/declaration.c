@@ -1,7 +1,4 @@
 #include "ast/declaration.h"
-#include "ast/statement.h"
-#include "ast/type.h"
-
 #include "common/mem.h"
 
 struct function_t
@@ -21,12 +18,12 @@ struct argument_t
 
 struct declaration_t
 {
-    declaration_kind_t kind;
     union
     {
         struct function_t function;
         struct argument_t argument;
     };
+    declaration_kind_t kind;
 };
 
 static
@@ -113,6 +110,22 @@ span_t declaration_name(declaration_t declaration)
         return ARGUMENT(declaration)->name;
     default: __builtin_unreachable();
         return span_ctor(0, NULL);
+    }
+}
+
+type_t declaration_type(declaration_t declaration)
+{
+    if (declaration == NULL)
+        return NULL;
+
+    switch (declaration->kind) // LCOV_EXCL_LINE
+    {
+    case DECLARATION_FUNCTION:
+        return FUNCTION(declaration)->type;
+    case DECLARATION_ARGUMENT:
+        return ARGUMENT(declaration)->type;
+    default: __builtin_unreachable();
+        return NULL;
     }
 }
 

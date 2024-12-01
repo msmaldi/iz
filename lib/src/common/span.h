@@ -7,13 +7,14 @@
 typedef struct span span_t;
 struct span
 {
-    size_t       size;
+    int         size;
     const char  *data;
 };
 
 span_t span_sz(const char *sz);
-span_t span_ctor(size_t size, const char *data);
+span_t span_ctor(int size, const char *data);
 
-bool span_eq(span_t lhs, span_t rhs);
+bool   span_eq(span_t lhs, span_t rhs);
+int    span_cmp(span_t lhs, span_t rhs);
 
 #endif

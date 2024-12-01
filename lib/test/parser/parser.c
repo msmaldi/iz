@@ -5,6 +5,7 @@
 #include <cmocka.h>
 
 #include "parser/parser.h"
+#include "common/source.h"
 
 #define LF "\n"
 
@@ -13,113 +14,20 @@ static void success_branch(void **arg)
     (void) arg;
 
     {
-        parser_t parser = parser_new("");
-        parser_free(parser);
+        source_t code_v001 = source_load("../docs/samples/v0.0.1.iz");
+
+        unit_t unit = syntax_analysis(code_v001);
+
+        unit_free(unit);
     }
 
     {
-        const char* code = "1";
-        parser_t parser = parser_new(code);
+        source_t code_v002 = source_load("../docs/samples/v0.0.2.iz");
 
-        expression_t one = scan_expression(parser);
+        unit_t unit = syntax_analysis(code_v002);
 
-        assert_non_null(one);
-
-        expression_free(one);
-        parser_free(parser);
+        unit_free(unit);
     }
-
-    {
-        const char* code = "n";
-        parser_t parser = parser_new(code);
-
-        expression_t n = scan_expression(parser);
-
-        assert_non_null(n);
-
-        expression_free(n);
-        parser_free(parser);
-    }
-
-    {
-        const char* code = "return 1;";
-        parser_t parser = parser_new(code);
-
-        statement_t return_1 = scan_statement(parser);
-        assert_non_null(return_1);
-
-        expression_t one = return_expression(RETURN(return_1));
-        assert_non_null(one);
-
-        constant_t constant_one = CONSTANT(one);
-        assert_non_null(constant_one);
-        assert_int_equal(constant_u64(constant_one), 1);
-
-        statement_free(return_1);
-        parser_free(parser);
-    }
-
-    {
-        const char *code =
-        "int one()"
-        "    return 1;";
-
-        parser_t parser = parser_new(code);
-
-        declaration_t def_one = scan_function(parser);
-        function_t fn_one = FUNCTION(def_one);
-        assert_non_null(fn_one);
-
-        declaration_free(def_one);
-
-        parser_free(parser);
-    }
-
-    {
-        const char *code =
-        "int num(int n)"
-        "    return n;";
-        parser_t parser = parser_new(code);
-
-        declaration_t def_num = scan_function(parser);
-        function_t fn_one = FUNCTION(def_num);
-        assert_non_null(fn_one);
-
-        declaration_free(def_num);
-        parser_free(parser);
-    }
-
-    {
-        const char *code =
-        "int num(int a, int b)"
-        "    return a;"
-        ;
-        parser_t parser = parser_new(code);
-
-        declaration_t def_num = scan_function(parser);
-        function_t fn_one = FUNCTION(def_num);
-        assert_non_null(fn_one);
-
-        declaration_free(def_num);
-        parser_free(parser);
-    }
-
-    {
-        char *code_a001 =
-        "int one()"      LF
-        "    return 1;"  LF
-        ""               LF
-        "int num(int n)" LF
-        "    return n;"  LF
-        ;
-
-        unit_t unit_a001 = parse(code_a001);
-
-        unit_free(unit_a001);
-    }
-
-
-
 }
 
 static void failure_branch(void **arg)
@@ -127,60 +35,22 @@ static void failure_branch(void **arg)
     (void) arg;
 
     {
-        const char* code = "#";
-        parser_t parser = parser_new(code);
-
-        expression_t one = scan_expression(parser);
-
-        assert_null(one);
-
-        parser_free(parser);
-    }
-
-    {
-        const char* code = "return #";
-        parser_t parser = parser_new(code);
-
-        statement_t return_1 = scan_statement(parser);
-        assert_null(return_1);
-
-        parser_free(parser);
-    }
-
-    {
-        const char* code = "return 1#";
-        parser_t parser = parser_new(code);
-
-        statement_t return_1 = scan_statement(parser);
-        assert_null(return_1);
-
-        parser_free(parser);
-    }
-
-    {
         const char *code =
         "# one()"
         "    return 1;";
 
-        parser_t parser = parser_new(code);
-
-        declaration_t fn_one = scan_function(parser);
-        assert_null(fn_one);
-
-        parser_free(parser);
+        unit_t unit = syntax_analysis(source_inline(code, "error001.iz"));
+        assert_null(unit);
     }
+
 
     {
         const char *code =
         "int #()"
         "    return 1;";
 
-        parser_t parser = parser_new(code);
-
-        declaration_t fn_one = scan_function(parser);
-        assert_null(fn_one);
-
-        parser_free(parser);
+        unit_t unit = syntax_analysis(source_inline(code, "error002.iz"));
+        assert_null(unit);
     }
 
     {
@@ -188,12 +58,8 @@ static void failure_branch(void **arg)
         "int one#)"
         "    return 1;";
 
-        parser_t parser = parser_new(code);
-
-        declaration_t fn_one = scan_function(parser);
-        assert_null(fn_one);
-
-        parser_free(parser);
+        unit_t unit = syntax_analysis(source_inline(code, "error003.iz"));
+        assert_null(unit);
     }
 
     {
@@ -201,72 +67,158 @@ static void failure_branch(void **arg)
         "int one(#"
         "    return 1;";
 
-        parser_t parser = parser_new(code);
-
-        declaration_t fn_one = scan_function(parser);
-        assert_null(fn_one);
-
-        parser_free(parser);
+        unit_t unit = syntax_analysis(source_inline(code, "error004.iz"));
+        assert_null(unit);
     }
 
     {
         const char *code =
-        "int one()"
+        "int one()"  LF
         "    # 1;";
 
-        parser_t parser = parser_new(code);
+        unit_t unit = syntax_analysis(source_inline(code, "error005.iz"));
+        assert_null(unit);
+    }
 
-        declaration_t fn_one = scan_function(parser);
-        assert_null(fn_one);
+    {
+        const char* code =
+        "int one()"     LF
+        "    return #"  LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error006.iz"));
+        assert_null(unit);
+    }
 
-        parser_free(parser);
+    {
+        const char* code =
+        "int one()"      LF
+        "    return 1"   LF
+        "#"              LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error007.iz"));
+        assert_null(unit);
+    }
+
+    {
+        const char* code =
+        "int one()"         LF
+        "    return fib(#"  LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error008.iz"));
+        assert_null(unit);
+    }
+
+    {
+        const char* code =
+        "int one()"          LF
+        "    return fib(1#"  LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error009.iz"));
+        assert_null(unit);
+    }
+
+    {
+        const char* code =
+        "int one()"           LF
+        "    return fib(1,#"  LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error010.iz"));
+        assert_null(unit);
+    }
+
+    {
+        const char* code =
+        "int one()"  LF
+        "{"          LF
+        "    #"      LF
+        "}"          LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error011.iz"));
+        assert_null(unit);
+    }
+
+    {
+        const char* code =
+        "int min(int lhs, int rhs)" LF
+        "{"                         LF
+        "    if #"                  LF
+        "}"                         LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error012.iz"));
+        assert_null(unit);
+    }
+
+    {
+        const char* code =
+        "int min(int lhs, int rhs)" LF
+        "{"                         LF
+        "    if (#"                 LF
+        "}"                         LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error013.iz"));
+        assert_null(unit);
+    }
+
+    {
+        const char* code =
+        "int min(int lhs, int rhs)" LF
+        "{"                         LF
+        "    if (lhs < rhs #"       LF
+        "}"                         LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error014.iz"));
+        assert_null(unit);
+    }
+
+    {
+        const char* code =
+        "int min(int lhs, int rhs)" LF
+        "{"                         LF
+        "    if (lhs < rhs) #"      LF
+        "}"                         LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error015.iz"));
+        assert_null(unit);
+    }
+
+    {
+        const char* code =
+        "int min(int lhs, int rhs)" LF
+        "{"                         LF
+        "    if (lhs < rhs)"        LF
+        "        return lhs;"       LF
+        "    else #"                LF
+        "}"                         LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error016.iz"));
+        assert_null(unit);
     }
 
     {
         const char *code =
         "int num(int ###)"
-        "    return n;";
-        parser_t parser = parser_new(code);
-
-        declaration_t def_num = scan_function(parser);
-        assert_null(def_num);
-
-        parser_free(parser);
-    }
-
-    {
-        const char *code =
-        "int ##";
-        parser_t parser = parser_new(code);
-
-        declaration_t arg = scan_argument(parser);
-        assert_null(arg);
-
-        parser_free(parser);
+        "    return n;"
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error017.iz"));
+        assert_null(unit);
     }
 
     {
         const char *code =
         "int num(int a ###)"
-        "    return a;";
-        parser_t parser = parser_new(code);
-
-        declaration_t def_num = scan_function(parser);
-        assert_null(def_num);
-
-        parser_free(parser);
+        "    return a;"
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error018.iz"));
+        assert_null(unit);
     }
 
     {
         const char *code =
         "int num(int a, int ###)"
-        "    return a;";
-        parser_t parser = parser_new(code);
-
-        declaration_t def_num = scan_function(parser);
-        assert_null(def_num);
-
-        parser_free(parser);
+        "    return a;"
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error019.iz"));
+        assert_null(unit);
     }
 
     {
@@ -276,14 +228,8 @@ static void failure_branch(void **arg)
         ""               LF
         "##############" LF
         ;
-
-        parser_t parser = parser_new(code);
-
-        unit_t unit_a001 = scan_unit(parser);
-
-        assert_null(unit_a001);
-
-        parser_free(parser);
+        unit_t unit = syntax_analysis(source_inline(code, "error020.iz"));
+        assert_null(unit);
     }
 
 }

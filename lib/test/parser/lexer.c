@@ -19,8 +19,11 @@ static void test_data(void **arg)
     {
         assert_false(is_keyword_return(lexer_alloc("")));
 
+        assert_true(is_keyword_bool(lexer_alloc("bool")));
         assert_true(is_keyword_int(lexer_alloc("int")));
         assert_true(is_keyword_return(lexer_alloc("return")));
+        assert_true(is_keyword_if(lexer_alloc("if")));
+        assert_true(is_keyword_else(lexer_alloc("else")));
     }
 
     {
@@ -30,11 +33,16 @@ static void test_data(void **arg)
 
     {
         assert_true(is_open_paren(lexer_alloc("(")));
-        assert_false(is_open_paren(lexer_alloc("")));
+        assert_true(is_close_paren(lexer_alloc(")")));
+        assert_true(is_open_brace(lexer_alloc("{")));
+        assert_true(is_close_brace(lexer_alloc("}")));
     }
     {
-        assert_true(is_close_paren(lexer_alloc(")")));
+        assert_false(is_open_paren(lexer_alloc("")));
         assert_false(is_close_paren(lexer_alloc("")));
+        assert_false(is_open_brace(lexer_alloc("")));
+        assert_false(is_close_brace(lexer_alloc("")));
+
     }
 
     {
@@ -43,8 +51,8 @@ static void test_data(void **arg)
     }
 
     {
-        assert_true(is_colon(lexer_alloc(",")));
-        assert_false(is_colon(lexer_alloc("")));
+        assert_true(is_comma(lexer_alloc(",")));
+        assert_false(is_comma(lexer_alloc("")));
     }
 
     {
@@ -55,6 +63,25 @@ static void test_data(void **arg)
         assert_true(is_integer_literal(lexer));
         assert_int_equal(code, lexer->span.data);
         assert_int_equal(strlen(code), lexer->span.size);
+    }
+
+    {
+        assert_int_equal(TOKEN_LT, match_comparison(lexer_alloc("<")));
+        assert_int_equal(TOKEN_GT, match_comparison(lexer_alloc(">")));
+        assert_int_equal(TOKEN_LT_EQ, match_comparison(lexer_alloc("<=")));
+        assert_int_equal(TOKEN_GT_EQ, match_comparison(lexer_alloc(">=")));
+        assert_int_equal(TOKEN_EQ_EQ, match_equality(lexer_alloc("==")));
+        assert_int_equal(TOKEN_NO_EQ, match_equality(lexer_alloc("!=")));
+        assert_int_equal(TOKEN_PLUS, match_additive(lexer_alloc("+")));
+        assert_int_equal(TOKEN_MINUS, match_additive(lexer_alloc("-")));
+
+        assert_int_equal(TOKEN_UNEXPECTED, match_equality(lexer_alloc("=")));
+        assert_int_equal(TOKEN_UNEXPECTED, match_equality(lexer_alloc("!")));
+        assert_int_equal(TOKEN_UNEXPECTED, match_equality(lexer_alloc("")));
+        assert_int_equal(TOKEN_UNEXPECTED, match_comparison(lexer_alloc("")));
+        assert_int_equal(TOKEN_UNEXPECTED, match_additive(lexer_alloc("")));
+
+
     }
 
 

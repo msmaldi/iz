@@ -59,6 +59,7 @@ static void test_data(void **arg)
         type_t arg0_ty = type_int_new();
         declaration_t arg0 = argument_new(arg0_ty, span_sz("n"));
         argument_s = array_add(argument_s, arg0);
+        assert_int_equal(arg0_ty, declaration_type(arg0));
 
         argument_t argument = ARGUMENT(arg0);
         assert_int_equal(arg0_ty, argument_type(argument));
@@ -76,13 +77,13 @@ static void test_data(void **arg)
 
         declaration_t declaration = function_new(u64_ty, name, argument_s, statement);
         assert_int_equal(DECLARATION_FUNCTION, declaration_kind(declaration));
+        type_t declaration_ty = declaration_type(declaration);
+        assert_int_equal(TYPE_CALLABLE, type_kind(declaration_ty));
 
         function_t function = FUNCTION(declaration);
         assert_int_equal(u64_ty, function_return_type(function));
         assert_true(span_eq(name, function_name(function)));
         assert_int_equal(argument_s, function_argument_s(function));
-
-
 
         assert_int_equal(statement, function_statement(function));
 

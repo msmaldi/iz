@@ -37,6 +37,46 @@ static void test_data(void **arg)
 
         expression_free(expression);
     }
+
+    {
+        span_t name = span_sz("n");
+        expression_t n_expr = identifier_new(name);
+
+        uint64_t one = 1;
+        expression_t one_expr = constant_u64_new(one);
+
+        expression_t expression = binary_new(n_expr, BINARY_ADD, one_expr);
+
+        binary_t binary = BINARY(expression);
+        assert_non_null(binary);
+
+        assert_int_equal(n_expr, binary_lhs(binary));
+        assert_int_equal(one_expr, binary_rhs(binary));
+        assert_int_equal(BINARY_ADD, binary_op(binary));
+
+        expression_free(expression);
+    }
+
+    {
+        span_t name = span_sz("fib");
+        expression_t fib_expr = identifier_new(name);
+
+        uint64_t one = 1;
+        expression_t one_expr = constant_u64_new(one);
+
+        array_t(expression_t) argument_s = array_empty();
+        argument_s = array_add(argument_s, one_expr);
+
+        expression_t call_expr = call_new(fib_expr, argument_s);
+
+        call_t call = CALL(call_expr);
+        assert_non_null(call);
+
+        assert_int_equal(fib_expr, call_callee(call));
+        assert_int_equal(argument_s, call_argument_s(call));
+
+        expression_free(call_expr);
+    }
 }
 
 int main()

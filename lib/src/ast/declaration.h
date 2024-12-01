@@ -2,7 +2,6 @@
 #define _DECLARATION_H_
 
 #include "ast/ast.h"
-#include "common/span.h"
 
 enum declaration_kind_t
 {
@@ -17,6 +16,7 @@ void          declaration_free(declaration_t declaration);
 
 declaration_kind_t  declaration_kind(declaration_t declaration);
 span_t              declaration_name(declaration_t declaration);
+type_t              declaration_type(declaration_t declaration);
 
 type_t                  function_type(function_t function);
 type_t                  function_return_type(function_t function);

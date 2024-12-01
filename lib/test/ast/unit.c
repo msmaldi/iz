@@ -65,7 +65,7 @@ static void test_data(void **arg)
             declaration_s = array_add(declaration_s, num_fn);
         }
 
-        unit_t unit = unit_new(code_a001, declaration_s);
+        unit_t unit = unit_new(source_inline(code_a001, ""), declaration_s);
 
         array_t(declaration_t) unit_decl_s = unit_declaration_s(unit);
         assert_int_equal(2, array_size(unit_decl_s));

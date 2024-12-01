@@ -38,9 +38,13 @@ void create_num_function(LLVMModuleRef mod, LLVMBuilderRef builder, LLVMContextR
 
 int main()
 {
-    LLVMModuleRef mod = LLVMModuleCreateWithName("a001.iz");
-    LLVMBuilderRef builder = LLVMCreateBuilder();
     LLVMContextRef ctx = LLVMContextCreate();
+    LLVMModuleRef mod = LLVMModuleCreateWithNameInContext("a001.iz", ctx);
+    char *triple = LLVMGetDefaultTargetTriple();
+    LLVMSetTarget(mod, triple);
+    LLVMSetDataLayout(mod, "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128");
+
+    LLVMBuilderRef builder = LLVMCreateBuilder();
 
     create_one_function(mod, builder, ctx);
 

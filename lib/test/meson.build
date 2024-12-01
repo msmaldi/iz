@@ -34,6 +34,12 @@ span = executable(
     dependencies: [ iz_dep_test, cmocka ])
 test('span', span)
 
+source = executable(
+    'source',
+    'common/source.c',
+    dependencies: [ iz_dep_test, cmocka ])
+test('source', source)
+
 array = executable(
     'array',
     'common/array.c',

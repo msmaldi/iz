@@ -142,17 +142,34 @@ bool backend_validate(backend_t backend)
 
 void backend_optimize(backend_t backend)
 {
-    LLVMPassManagerRef pass_manager = LLVMCreatePassManager();
+    LLVMPassBuilderOptionsRef pass_builder_options = LLVMCreatePassBuilderOptions();
 
     array_t(LLVMModuleRef) module_s = backend->module_s;
     size_t size = array_size(module_s);
-
-    for (size_t i = 0; i < size; i++)
+    for (size_t i = 0 ; i < size; i++)
     {
-        LLVMRunPassManager(pass_manager, module_s[i]);
+        LLVMRunPasses(module_s[i], "default<O3>", backend->machine, pass_builder_options);
     }
 
-    LLVMDisposePassManager(pass_manager);
+    LLVMDisposePassBuilderOptions(pass_builder_options);
+}
+
+void backend_emit_llvm(backend_t backend)
+{
+    array_t(LLVMModuleRef) module_s = backend->module_s;
+    size_t size = array_size(module_s);
+
+    for (size_t i = 0 ; i < size; i++)
+    {
+        char *error = NULL;
+        LLVMModuleRef module = module_s[i];
+
+        source_t source = unit_source(compilation_unit_s(backend->compilation)[i]);
+        char *filename = source_llvm_name(source);
+        LLVMPrintModuleToFile(module, filename, &error);
+
+        mem_free(filename);
+    }
 }
 
 void backend_setup(backend_t backend)
@@ -179,7 +196,11 @@ void backend_setup(backend_t backend)
     backend->target = target;
     backend->machine = machine;
 
+    array_t(LLVMModuleRef) module_s = backend->module_s;
+    size_t size = array_size(module_s);
 
+    for (size_t i = 0 ; i < size; i++)
+        LLVMSetTarget(module_s[i], LLVMGetDefaultTargetTriple());
 }
 
 backend_t backend_codegen(compilation_t compilation)
@@ -349,7 +370,9 @@ void codegen_if(codegen_t codegen, if_t ifelse)
 
     LLVMPositionBuilderAtEnd(codegen->builder, else_block);
     if (if_else_branch(ifelse))
+    {
         codegen_statement(codegen, if_else_branch(ifelse));
+    }
 }
 
 void codegen_statement(codegen_t codegen, statement_t statement)
@@ -370,8 +393,6 @@ LLVMValueRef LLVMAddFunction2(LLVMModuleRef M, span_t name, LLVMTypeRef Function
     char name_sz[name.size + 1];
     memcpy(name_sz, name.data, name.size);
     name_sz[name.size] = 0;
-
-
 
     return LLVMAddFunction(M, name_sz, FunctionTy);
 }

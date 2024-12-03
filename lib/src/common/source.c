@@ -100,3 +100,17 @@ char* source_assembly_name(source_t source)
 
     return target;
 }
+
+char *source_llvm_name(source_t source)
+{
+    size_t len = strlen(source_path(source));
+    char *target = mem_alloc(len + 1);
+
+    strcpy(target, source_path(source));
+
+    target[len - 2] = 'l';
+    target[len - 1] = 'l';
+    target[len] = '\0';
+
+    return target;
+}

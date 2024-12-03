@@ -16,5 +16,6 @@ const char* source_path(source_t source);
 
 char *source_object_name(source_t source);
 char *source_assembly_name(source_t source);
+char *source_llvm_name(source_t source);
 
 #endif

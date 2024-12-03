@@ -14,5 +14,6 @@ void       backend_dump(backend_t backend);
 
 void       backend_emit_object(backend_t backend);
 void       backend_emit_assembly(backend_t backend);
+void       backend_emit_llvm(backend_t backend);
 
 #endif

@@ -356,23 +356,60 @@ void codegen_return(codegen_t codegen, return_t ret)
 }
 
 static
-void codegen_if(codegen_t codegen, if_t ifelse)
+void codegen_if_only(codegen_t codegen, if_t ifelse)
 {
     LLVMValueRef llvm_condition = codegen_expression(codegen, if_condition(ifelse));
 
     LLVMBasicBlockRef then_block = LLVMAppendBasicBlock(codegen->function, "if.then");
+    LLVMBasicBlockRef join_block = LLVMAppendBasicBlock(codegen->function, "if.join");
+
+    LLVMBuildCondBr(codegen->builder, llvm_condition, then_block, join_block);
+
+    LLVMPositionBuilderAtEnd(codegen->builder, then_block);
+    codegen_statement(codegen, if_then_branch(ifelse));
+
+    LLVMPositionBuilderAtEnd(codegen->builder, join_block);
+}
+
+static
+void codegen_if_else(codegen_t codegen, if_t ifelse)
+{
+    LLVMValueRef llvm_condition = codegen_expression(codegen, if_condition(ifelse));
+
+    bool then_terminator = statement_all_path_return_value(if_then_branch(ifelse));
+    bool else_terminator = statement_all_path_return_value(if_else_branch(ifelse));
+    bool both_terminator = then_terminator && else_terminator;
+
+    LLVMBasicBlockRef then_block = LLVMAppendBasicBlock(codegen->function, "if.then");
     LLVMBasicBlockRef else_block = LLVMAppendBasicBlock(codegen->function, "if.else");
+
+    LLVMBasicBlockRef join_block = both_terminator ? NULL : LLVMAppendBasicBlock(codegen->function, "if.join");
 
     LLVMBuildCondBr(codegen->builder, llvm_condition, then_block, else_block);
 
     LLVMPositionBuilderAtEnd(codegen->builder, then_block);
     codegen_statement(codegen, if_then_branch(ifelse));
 
+    if (!then_terminator)
+        LLVMBuildBr(codegen->builder, join_block);
+
     LLVMPositionBuilderAtEnd(codegen->builder, else_block);
-    if (if_else_branch(ifelse))
-    {
-        codegen_statement(codegen, if_else_branch(ifelse));
-    }
+    codegen_statement(codegen, if_else_branch(ifelse));
+
+    if (!else_terminator)
+        LLVMBuildBr(codegen->builder, join_block);
+
+    if (!both_terminator)
+        LLVMPositionBuilderAtEnd(codegen->builder, join_block);
+}
+
+static
+void codegen_if(codegen_t codegen, if_t ifelse)
+{
+    if (if_else_branch(ifelse) == NULL)
+        codegen_if_only(codegen, ifelse);
+    else
+        codegen_if_else(codegen, ifelse);
 }
 
 void codegen_statement(codegen_t codegen, statement_t statement)

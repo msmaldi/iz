@@ -13,6 +13,7 @@ enum statement_kind_t
 statement_t  block_new(array_t(statement_t) statement_s);
 statement_t  return_new(expression_t expression);
 statement_t  if_new(expression_t condition, statement_t then_branch, statement_t else_branch);
+
 void         statement_free(statement_t statement);
 
 statement_kind_t  statement_kind(statement_t statement);

@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
     backend_optimize(backend);
     backend_emit_object(backend);
     backend_emit_assembly(backend);
+    backend_emit_llvm(backend);
 
     backend_free(backend);
 

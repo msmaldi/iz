@@ -6,7 +6,7 @@ Bem-vindo ao projeto iz!
 
 Este projeto é uma aplicação para um simples compilador.
 
-## TODO
+## Compilação
 
 ```
  ┌───────────────────┐

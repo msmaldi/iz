@@ -246,6 +246,7 @@ LLVMTypeRef codegen_type(codegen_t codegen, type_t type)
         case TYPE_CALLABLE:
             return codegen_callable(codegen, CALLABLE(type));
     }
+    return NULL;
 }
 
 
@@ -261,6 +262,7 @@ LLVMValueRef codegen_constant(codegen_t codegen, constant_t constant)
             return LLVMConstInt(LLVMInt32TypeInContext(codegen->context), u64, 0);
         }
     }
+    return NULL;
 }
 
 LLVMValueRef codegen_identifier(codegen_t codegen, identifier_t identifier)
@@ -299,6 +301,7 @@ LLVMValueRef codegen_binary(codegen_t codegen, binary_t binary)
         case BINARY_REM:
             return LLVMBuildSRem(codegen->builder, lhs, rhs, "");
     }
+    return NULL;
 }
 
 LLVMValueRef codegen_call(codegen_t codegen, call_t call)
@@ -331,6 +334,7 @@ LLVMValueRef codegen_expression(codegen_t codegen, expression_t expression)
         case EXPRESSION_CALL:
             return codegen_call(codegen, CALL(expression));
     }
+    return NULL;
 }
 
 

@@ -150,6 +150,7 @@ bool statement_all_path_return_value(statement_t statement)
         case STATEMENT_IF:
             return if_all_path_return_value(IF(statement));
     }
+    return NULL;
 }
 
 array_t(statement_t) block_statement_s(block_t block)

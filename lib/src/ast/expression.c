@@ -183,6 +183,7 @@ type_t constant_type(constant_t constant)
         case CONSTANT_U64:
             return type_int();
     }
+    return NULL;
 }
 
 static
@@ -215,6 +216,7 @@ type_t binary_type(binary_t binary)
     case BINARY_REM:
         return lhs;
     }
+    return NULL;
 }
 
 static
@@ -243,6 +245,7 @@ type_t expression_type(expression_t expression)
         case EXPRESSION_CALL:
             return call_type(CALL(expression));
     }
+    return NULL;
 }
 
 

@@ -36,12 +36,15 @@ static void test_data(void **arg)
         assert_true(is_close_paren(lexer_alloc(")")));
         assert_true(is_open_brace(lexer_alloc("{")));
         assert_true(is_close_brace(lexer_alloc("}")));
+        assert_true(is_eq(lexer_alloc("=")));
     }
     {
         assert_false(is_open_paren(lexer_alloc("")));
         assert_false(is_close_paren(lexer_alloc("")));
         assert_false(is_open_brace(lexer_alloc("")));
         assert_false(is_close_brace(lexer_alloc("")));
+        assert_false(is_eq(lexer_alloc("")));
+        assert_false(is_eq(lexer_alloc("==")));
 
     }
 
@@ -74,14 +77,15 @@ static void test_data(void **arg)
         assert_int_equal(TOKEN_NO_EQ, match_equality(lexer_alloc("!=")));
         assert_int_equal(TOKEN_PLUS, match_additive(lexer_alloc("+")));
         assert_int_equal(TOKEN_MINUS, match_additive(lexer_alloc("-")));
+        assert_int_equal(TOKEN_EQ, match_assignment(lexer_alloc("=")));
 
         assert_int_equal(TOKEN_UNEXPECTED, match_equality(lexer_alloc("=")));
         assert_int_equal(TOKEN_UNEXPECTED, match_equality(lexer_alloc("!")));
         assert_int_equal(TOKEN_UNEXPECTED, match_equality(lexer_alloc("")));
         assert_int_equal(TOKEN_UNEXPECTED, match_comparison(lexer_alloc("")));
         assert_int_equal(TOKEN_UNEXPECTED, match_additive(lexer_alloc("")));
-
-
+        assert_int_equal(TOKEN_UNEXPECTED, match_assignment(lexer_alloc("")));
+        assert_int_equal(TOKEN_UNEXPECTED, match_assignment(lexer_alloc("==")));
     }
 
 

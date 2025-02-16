@@ -77,6 +77,24 @@ static void test_data(void **arg)
 
         expression_free(call_expr);
     }
+
+    {
+        span_t n = span_sz("n");
+        expression_t n_expr = identifier_new(n);
+
+        uint64_t one = 1;
+        expression_t one_expr = constant_u64_new(one);
+
+        expression_t assignment_expr = assignment_new(n_expr, one_expr);
+
+        assert_int_equal(EXPRESSION_ASSIGNMENT, expression_kind(assignment_expr));
+        assignment_t assignment = ASSIGNMENT(assignment_expr);
+
+        assert_int_equal(n_expr, assignment_lvalue(assignment));
+        assert_int_equal(one_expr, assignment_rvalue(assignment));
+
+        expression_free(assignment_expr);
+    }
 }
 
 int main()

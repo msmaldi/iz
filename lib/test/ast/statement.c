@@ -75,6 +75,47 @@ static void test_data(void **arg)
 
         statement_free(statement);
     }
+
+    {
+        type_t int_ty = type_int_new();
+        span_t name = span_sz("n");
+
+        uint64_t two = 2;
+        expression_t two_expr = constant_u64_new(two);
+
+        declaration_t n = variable_new(int_ty, name, two_expr);
+
+        array_t(declaration_t) var_s = array_empty();
+        var_s = array_add(var_s, n);
+
+        statement_t var_stmt = var_new(var_s);
+        var_t var = VAR(var_stmt);
+
+        assert_int_equal(var_variable_s(var), var_s);
+
+        statement_free(var_stmt);
+    }
+
+    {
+        span_t name = span_sz("fib");
+        expression_t fib_expr = identifier_new(name);
+
+        uint64_t two = 2;
+        expression_t two_expr = constant_u64_new(two);
+
+        array_t(expression_t) argument_s = array_empty();
+        argument_s = array_add(argument_s, two_expr);
+
+        expression_t call_expr = call_new(fib_expr, argument_s);
+
+        array_t(expression_t) expression_s = array_empty();
+        expression_s = array_add(expression_s, call_expr);
+
+        statement_t statement = act_new(expression_s);
+
+        statement_free(statement);
+    }
+
 }
 
 int main()

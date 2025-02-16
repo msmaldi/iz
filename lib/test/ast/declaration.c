@@ -100,6 +100,32 @@ static void test_data(void **arg)
         declaration_free(declaration);
     }
 
+    {
+        type_t int_ty = type_int_new();
+        span_t name = span_sz("n");
+
+        declaration_t n = variable_new(int_ty, name, NULL);
+        variable_t var_n = VARIABLE(n);
+
+        assert_true(type_eq(variable_type(var_n), int_ty));
+        assert_true(span_eq(variable_name(var_n), name));
+        assert_null(variable_initializer(var_n));
+
+        declaration_free(n);
+    }
+
+    {
+        type_t int_ty = type_int_new();
+        span_t name = span_sz("n");
+
+        uint64_t two = 2;
+        expression_t two_expr = constant_u64_new(two);
+
+        declaration_t n = variable_new(int_ty, name, two_expr);
+
+        declaration_free(n);
+    }
+
 }
 
 int main()

@@ -25,6 +25,16 @@ static void success_branch(void **arg)
     {
         source_t code_v002 = source_load("../docs/samples/v0.0.2.iz");
         unit_t unit = syntax_analysis(code_v002);
+        array_t unit_s = array_add(array_empty(), unit);
+        compilation_t compilation = semantic_analysis(unit_s);
+        assert_non_null(compilation);
+
+        compilation_free(compilation);
+    }
+
+    {
+        source_t code_v003 = source_load("../docs/samples/v0.0.3.iz");
+        unit_t unit = syntax_analysis(code_v003);
         compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
         assert_non_null(compilation);
 
@@ -118,6 +128,21 @@ static void failure_branch(void **arg)
         ;
 
         unit_t unit = syntax_analysis(source_inline(code, "sema_error007.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        char *code =
+        "int num(int n)" LF
+        "{"              LF
+        "    int a;"     LF
+        "    int a;"     LF
+        "    return n;"  LF
+        "}"              LF
+        ;
+
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error008.iz"));
         compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
         assert_null(compilation);
     }

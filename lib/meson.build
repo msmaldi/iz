@@ -1,6 +1,7 @@
 includes = include_directories([ 'src' ])
 
 sources = files(
+    'src/ast/ast_print.c',
     'src/ast/compilation.c',
     'src/ast/declaration.c',
     'src/ast/expression.c',

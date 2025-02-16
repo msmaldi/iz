@@ -28,6 +28,14 @@ static void success_branch(void **arg)
 
         unit_free(unit);
     }
+
+    {
+        source_t code_v003 = source_load("../docs/samples/v0.0.3.iz");
+
+        unit_t unit = syntax_analysis(code_v003);
+
+        unit_free(unit);
+    }
 }
 
 static void failure_branch(void **arg)
@@ -229,6 +237,62 @@ static void failure_branch(void **arg)
         "##############" LF
         ;
         unit_t unit = syntax_analysis(source_inline(code, "error020.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code =
+        "int one()"      LF
+        "{"              LF
+        "    int #"      LF
+        "}"              LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error021.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code =
+        "int one()"      LF
+        "{"              LF
+        "    int a = #"  LF
+        "}"              LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error022.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code =
+        "int one()"        LF
+        "{"                LF
+        "    int a = 1 #"  LF
+        "}"                LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error023.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code =
+        "int one()"        LF
+        "{"                LF
+        "    fib() #"      LF
+        "}"                LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error024.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code =
+        "int one()"        LF
+        "{"                LF
+        "    int x;"       LF
+        "    x = #"        LF
+        "}"                LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error025.iz"));
         assert_null(unit);
     }
 

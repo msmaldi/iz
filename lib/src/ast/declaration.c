@@ -16,12 +16,20 @@ struct argument_t
     span_t name;
 };
 
+struct variable_t
+{
+    type_t type;
+    span_t name;
+    expression_t initializer;
+};
+
 struct declaration_t
 {
     union
     {
         struct function_t function;
         struct argument_t argument;
+        struct variable_t variable;
     };
     declaration_kind_t kind;
 };
@@ -67,6 +75,17 @@ declaration_t argument_new(type_t type, span_t name)
     return declaration;
 }
 
+declaration_t variable_new(type_t type, span_t name, expression_t initializer)
+{
+    declaration_t declaration = declaration_new(DECLARATION_VARIABLE);
+    variable_t variable = VARIABLE(declaration);
+    variable->type = type;
+    variable->name = name;
+    variable->initializer = initializer;
+
+    return declaration;
+}
+
 static
 void function_free(function_t function)
 {
@@ -80,6 +99,14 @@ void argument_free(argument_t argument)
 {
 }
 
+static
+void variable_free(variable_t variable)
+{
+    type_free(variable->type);
+    if (variable->initializer != NULL)
+        expression_free(variable->initializer);
+}
+
 void declaration_free(declaration_t declaration)
 {
     switch (declaration->kind) // LCOV_EXCL_LINE
@@ -90,7 +117,9 @@ void declaration_free(declaration_t declaration)
     case DECLARATION_ARGUMENT:
         argument_free(ARGUMENT(declaration));
         break;
-    default: __builtin_unreachable(); break;
+    case DECLARATION_VARIABLE:
+        variable_free(VARIABLE(declaration));
+        break;
     }
     mem_free(declaration);
 }
@@ -108,9 +137,11 @@ span_t declaration_name(declaration_t declaration)
         return FUNCTION(declaration)->name;
     case DECLARATION_ARGUMENT:
         return ARGUMENT(declaration)->name;
-    default: __builtin_unreachable();
-        return span_ctor(0, NULL);
+    case DECLARATION_VARIABLE:
+        return VARIABLE(declaration)->name;
     }
+
+    __builtin_unreachable();
 }
 
 type_t declaration_type(declaration_t declaration)
@@ -124,9 +155,10 @@ type_t declaration_type(declaration_t declaration)
         return FUNCTION(declaration)->type;
     case DECLARATION_ARGUMENT:
         return ARGUMENT(declaration)->type;
-    default: __builtin_unreachable();
-        return NULL;
+    case DECLARATION_VARIABLE:
+        return VARIABLE(declaration)->type;
     }
+    __builtin_unreachable();
 }
 
 type_t function_type(function_t function)
@@ -164,6 +196,21 @@ span_t argument_name(argument_t argument)
     return argument->name;
 }
 
+type_t variable_type(variable_t variable)
+{
+    return variable->type;
+}
+
+span_t variable_name(variable_t variable)
+{
+    return variable->name;
+}
+
+expression_t variable_initializer(variable_t variable)
+{
+    return variable->initializer;
+}
+
 function_t FUNCTION(declaration_t declaration)
 {
     return &declaration->function;
@@ -172,4 +219,9 @@ function_t FUNCTION(declaration_t declaration)
 argument_t ARGUMENT(declaration_t declaration)
 {
     return &declaration->argument;
+}
+
+variable_t VARIABLE(declaration_t declaration)
+{
+    return &declaration->variable;
 }

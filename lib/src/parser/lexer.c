@@ -180,6 +180,18 @@ bool is_comma(lexer_t lexer)
     return true;
 }
 
+bool is_eq(lexer_t lexer)
+{
+    if (skip_whitespaces(lexer) != '=')
+        return false;
+
+    if (lexer->cursor[1] == '=')
+        return false;
+
+    advance(lexer, 1);
+    return true;
+}
+
 bool is_integer_literal(lexer_t lexer)
 {
     char c = skip_whitespaces(lexer);
@@ -205,6 +217,17 @@ token_kind_t match_found(lexer_t lexer, token_kind_t token_kind, char *data, siz
     lexer->span.size = size;
     advance(lexer, size);
     return token_kind;
+}
+
+token_kind_t match_assignment(lexer_t lexer)
+{
+    skip_whitespaces(lexer);
+    char *cursor = lexer->cursor;
+
+    if (cursor[0] == '=' && cursor[1] != '=')
+        return match_found(lexer, TOKEN_EQ, cursor, 1);
+
+    return TOKEN_UNEXPECTED;
 }
 
 token_kind_t match_equality(lexer_t lexer)

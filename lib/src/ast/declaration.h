@@ -7,10 +7,12 @@ enum declaration_kind_t
 {
     DECLARATION_FUNCTION,
     DECLARATION_ARGUMENT,
+    DECLARATION_VARIABLE,
 };
 
 declaration_t function_new(type_t return_type, span_t name, array_t(declaration_t) argument_s, statement_t statement);
 declaration_t argument_new(type_t type, span_t name);
+declaration_t variable_new(type_t type, span_t name, expression_t initializer);
 
 void          declaration_free(declaration_t declaration);
 
@@ -27,8 +29,13 @@ statement_t             function_statement(function_t function);
 type_t       argument_type(argument_t argument);
 span_t       argument_name(argument_t argument);
 
+type_t          variable_type(variable_t variable);
+span_t          variable_name(variable_t variable);
+expression_t    variable_initializer(variable_t variable);
+
 function_t FUNCTION(declaration_t declaration);
 argument_t ARGUMENT(declaration_t declaration);
+variable_t VARIABLE(declaration_t declaration);
 
 
 #endif

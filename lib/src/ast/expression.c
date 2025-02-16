@@ -28,14 +28,28 @@ struct call_t
     array_t(expression_t) argument_s;
 };
 
+struct assignment_t
+{
+    expression_t lvalue;
+    expression_t rvalue;
+};
+
+struct implicit_cast_t
+{
+    implicit_cast_kind_t kind;
+    expression_t expression;
+};
+
 struct expression_t
 {
     union
     {
-        struct constant_t   constant;
-        struct identifier_t identifier;
-        struct binary_t     binary;
-        struct call_t       call;
+        struct constant_t      constant;
+        struct identifier_t    identifier;
+        struct binary_t        binary;
+        struct call_t          call;
+        struct assignment_t    assignment;
+        struct implicit_cast_t implicit_cast;
     };
     expression_kind_t kind;
 };
@@ -87,6 +101,25 @@ expression_t call_new(expression_t callee, array_t(expression_t) argument_s)
     return expression;
 }
 
+
+expression_t assignment_new(expression_t lvalue, expression_t rvalue)
+{
+    expression_t expression = expression_new(EXPRESSION_ASSIGNMENT);
+    assignment_t assignment = ASSIGNMENT(expression);
+    assignment->lvalue = lvalue;
+    assignment->rvalue = rvalue;
+    return expression;
+}
+
+expression_t implicit_cast_new(implicit_cast_kind_t kind, expression_t lvalue)
+{
+    expression_t expression = expression_new(EXPRESSION_IMPLICIT_CAST);
+    implicit_cast_t implicit_cast = IMPLICIT_CAST(expression);
+    implicit_cast->kind = kind;
+    implicit_cast->expression = lvalue;
+    return expression;
+}
+
 static
 void binary_free(binary_t binary)
 {
@@ -101,6 +134,19 @@ void call_free(call_t call)
     array_cleanup_free(call->argument_s, (release_t)expression_free);
 }
 
+static
+void assignment_free(assignment_t assignment)
+{
+    expression_free(assignment->lvalue);
+    expression_free(assignment->rvalue);
+}
+
+static
+void implict_cast_free(implicit_cast_t implicit_cast)
+{
+    expression_free(implicit_cast->expression);
+}
+
 void expression_free(expression_t expression)
 {
     switch (expression->kind) // LCOV_EXCL_LINE
@@ -113,6 +159,12 @@ void expression_free(expression_t expression)
             break;
         case EXPRESSION_CALL:
             call_free(CALL(expression));
+            break;
+        case EXPRESSION_ASSIGNMENT:
+            assignment_free(ASSIGNMENT(expression));
+            break;
+        case EXPRESSION_IMPLICIT_CAST:
+            implict_cast_free(IMPLICIT_CAST(expression));
             break;
     }
 
@@ -154,9 +206,19 @@ expression_t binary_lhs(binary_t binary)
     return binary->lhs;
 }
 
+void binary_set_lhs(binary_t binary, expression_t lhs)
+{
+    binary->lhs = lhs;
+}
+
 expression_t binary_rhs(binary_t binary)
 {
     return binary->rhs;
+}
+
+void binary_set_rhs(binary_t binary, expression_t rhs)
+{
+    binary->rhs = rhs;
 }
 
 binary_kind_t binary_op(binary_t binary)
@@ -174,6 +236,30 @@ array_t(expression_t) call_argument_s(call_t call)
     return call->argument_s;
 }
 
+expression_t assignment_lvalue(assignment_t assignment)
+{
+    return assignment->lvalue;
+}
+
+expression_t assignment_rvalue(assignment_t assignment)
+{
+    return assignment->rvalue;
+}
+
+void assignment_set_rvalue(assignment_t assignment, expression_t rvalue)
+{
+    assignment->rvalue = rvalue;
+}
+
+implicit_cast_kind_t implicit_cast_kind(implicit_cast_t implicit_cast)
+{
+    return implicit_cast->kind;
+}
+
+expression_t implicit_cast_expression(implicit_cast_t implicit_cast)
+{
+    return implicit_cast->expression;
+}
 
 static
 type_t constant_type(constant_t constant)
@@ -183,7 +269,7 @@ type_t constant_type(constant_t constant)
         case CONSTANT_U64:
             return type_int();
     }
-    return NULL;
+    __builtin_unreachable();
 }
 
 static
@@ -216,7 +302,7 @@ type_t binary_type(binary_t binary)
     case BINARY_REM:
         return lhs;
     }
-    return NULL;
+    __builtin_unreachable();
 }
 
 static
@@ -232,6 +318,17 @@ type_t call_type(call_t call)
     return callable_return_type(callable);
 }
 
+static
+type_t assignment_type(assignment_t assignment)
+{
+    return expression_type(assignment_lvalue(assignment));
+}
+
+type_t implicit_cast_type(implicit_cast_t implicit_cast)
+{
+    return expression_type(implicit_cast_expression(implicit_cast));
+}
+
 type_t expression_type(expression_t expression)
 {
     switch (expression_kind(expression)) // LCOV_EXCL_LINE
@@ -244,8 +341,12 @@ type_t expression_type(expression_t expression)
             return binary_type(BINARY(expression));
         case EXPRESSION_CALL:
             return call_type(CALL(expression));
+        case EXPRESSION_ASSIGNMENT:
+            return assignment_type(ASSIGNMENT(expression));
+        case EXPRESSION_IMPLICIT_CAST:
+            return implicit_cast_type(IMPLICIT_CAST(expression));
     }
-    return NULL;
+    __builtin_unreachable();
 }
 
 
@@ -268,4 +369,14 @@ binary_t BINARY(expression_t expression)
 call_t CALL(expression_t expression)
 {
     return &expression->call;
+}
+
+assignment_t ASSIGNMENT(expression_t expression)
+{
+    return &expression->assignment;
+}
+
+implicit_cast_t IMPLICIT_CAST(expression_t expression)
+{
+    return &expression->implicit_cast;
 }

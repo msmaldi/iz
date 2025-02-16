@@ -83,6 +83,34 @@ void type_free(type_t type)
     mem_free(type);
 }
 
+static
+type_t callable_clone(callable_t callable)
+{
+    array_t(type_t) param_s = array_empty();
+    for (size_t i = 0; i < array_size(callable->param_s); ++i)
+    {
+        type_t param = type_clone(callable->param_s[i]);
+        param_s = array_add(param_s, param);
+    }
+
+    return type_callable_new(type_clone(callable->return_type), param_s);
+}
+
+type_t type_clone(type_t type)
+{
+    switch (type->kind) // LCOV_EXCL_LINE
+    {
+        case TYPE_BOOL:
+            return type_bool_new();
+        case TYPE_INT:
+            return type_int_new();
+        case TYPE_CALLABLE:
+            return callable_clone(CALLABLE(type));
+    }
+
+    __builtin_unreachable();
+}
+
 bool type_eq(type_t lhs, type_t rhs)
 {
     if (lhs == NULL || rhs == NULL)

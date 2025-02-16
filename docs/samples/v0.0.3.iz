@@ -1,0 +1,18 @@
+bool is_even(int n)
+{
+    int two = 2;
+    int zero = 0;
+
+    return n % two == zero;
+}
+
+int fib(int n)
+{
+    if (n < 2)
+        return n;
+
+    int fib_prev_1 = fib(n - 1), fib_prev_2;
+    fib_prev_2 = fib(n - 2);
+
+    return fib_prev_1 + fib_prev_2;
+}

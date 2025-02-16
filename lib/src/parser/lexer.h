@@ -23,6 +23,7 @@ enum token_kind_t
     TOKEN_STAR,
     TOKEN_SLASH,
     TOKEN_PERCENT,
+    TOKEN_EQ,
 };
 
 typedef enum keyword_t keyword_t;
@@ -77,9 +78,11 @@ bool is_open_paren(lexer_t lexer);
 bool is_close_paren(lexer_t lexer);
 bool is_open_brace(lexer_t lexer);
 bool is_close_brace(lexer_t lexer);
+bool is_eq(lexer_t lexer);
 
 bool is_integer_literal(lexer_t lexer);
 
+token_kind_t match_assignment(lexer_t lexer);
 token_kind_t match_equality(lexer_t lexer);
 token_kind_t match_comparison(lexer_t lexer);
 token_kind_t match_additive(lexer_t lexer);

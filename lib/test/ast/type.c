@@ -48,6 +48,45 @@ static void test_data(void **arg)
         assert_false(type_eq(type_bool(), NULL));
     }
 
+    {
+        type_t int_ty = type_int_new();
+        type_t cloned = type_clone(int_ty);
+
+        assert_int_equal(type_kind(cloned), TYPE_INT);
+        assert_true(type_eq(int_ty, cloned));
+
+        type_free(int_ty);
+        type_free(cloned);
+    }
+
+    {
+        type_t bool_ty = type_bool_new();
+        type_t cloned = type_clone(bool_ty);
+
+        assert_int_equal(type_kind(cloned), TYPE_BOOL);
+        assert_true(type_eq(bool_ty, cloned));
+
+        type_free(bool_ty);
+        type_free(cloned);
+    }
+
+    {
+        type_t int_ty = type_int_new();
+        array_t(type_t) param_s = array_empty();
+
+        type_t arg_ty = type_int_new();
+        param_s = array_add(param_s, arg_ty);
+
+        type_t type_callable = type_callable_new(int_ty, param_s);
+
+        type_t cloned = type_clone(type_callable);
+
+        assert_int_equal(type_kind(callable_return_type(CALLABLE(cloned))), TYPE_INT);
+        assert_int_equal(array_size(callable_param_s(CALLABLE(cloned))), 1);
+
+        type_free(type_callable);
+        type_free(cloned);
+    }
 }
 
 int main()

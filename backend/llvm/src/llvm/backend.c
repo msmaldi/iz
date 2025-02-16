@@ -268,7 +268,16 @@ LLVMValueRef codegen_constant(codegen_t codegen, constant_t constant)
 LLVMValueRef codegen_identifier(codegen_t codegen, identifier_t identifier)
 {
     declaration_t declaration = identifier_declaration(identifier);
+
+    if (declaration_kind(declaration) == DECLARATION_FUNCTION)
+        return map_get(codegen->values, declaration);
+
     return map_get(codegen->values, declaration);
+
+    //LLVMValueRef alloca = map_get(codegen->values, declaration);
+    //LLVMTypeRef type = codegen_type(codegen, declaration_type(declaration));
+
+    //return LLVMBuildLoad2(codegen->builder, type, alloca, "");
 }
 
 LLVMValueRef codegen_binary(codegen_t codegen, binary_t binary)
@@ -321,6 +330,40 @@ LLVMValueRef codegen_call(codegen_t codegen, call_t call)
     return LLVMBuildCall2(codegen->builder, llvm_call_ty, llvm_callee, llvm_argument_s, size, "");
 }
 
+LLVMValueRef codegen_assignment(codegen_t codegen, assignment_t assignment)
+{
+    expression_t lvalue = assignment_lvalue(assignment);
+    identifier_t identifier = IDENTIFIER(lvalue);
+
+    LLVMValueRef llvm_lvalue = map_get(codegen->values, identifier_declaration(identifier));
+
+    expression_t rvalue = assignment_rvalue(assignment);
+    LLVMValueRef llvm_rvalue = codegen_expression(codegen, rvalue);
+
+    LLVMBuildStore(codegen->builder, llvm_rvalue, llvm_lvalue);
+
+    LLVMTypeRef type = codegen_type(codegen, expression_type(lvalue));
+
+    return LLVMBuildLoad2(codegen->builder, type, llvm_lvalue, "");
+}
+
+LLVMValueRef codegen_implicit_cast(codegen_t codegen, implicit_cast_t implicit_cast)
+{
+    type_t type = implicit_cast_type(implicit_cast);
+    LLVMTypeRef type_llvm = codegen_type(codegen, type);
+    LLVMValueRef expression_llvm = codegen_expression(codegen, implicit_cast_expression(implicit_cast));
+
+    switch (implicit_cast_kind(implicit_cast))
+    {
+    case IMPLICIT_CAST_LVALUE_TO_RVALUE:
+        return LLVMBuildLoad2(codegen->builder, type_llvm, expression_llvm, "");
+        break;
+    default:
+        return NULL;
+    }
+    return NULL;
+}
+
 LLVMValueRef codegen_expression(codegen_t codegen, expression_t expression)
 {
     switch (expression_kind(expression)) // LCOV_EXCL_LINE
@@ -333,6 +376,11 @@ LLVMValueRef codegen_expression(codegen_t codegen, expression_t expression)
             return codegen_binary(codegen, BINARY(expression));
         case EXPRESSION_CALL:
             return codegen_call(codegen, CALL(expression));
+        case EXPRESSION_ASSIGNMENT:
+            return codegen_assignment(codegen, ASSIGNMENT(expression));
+        case EXPRESSION_IMPLICIT_CAST:
+            return codegen_implicit_cast(codegen, IMPLICIT_CAST(expression));
+            break;
     }
     return NULL;
 }
@@ -416,6 +464,43 @@ void codegen_if(codegen_t codegen, if_t ifelse)
         codegen_if_else(codegen, ifelse);
 }
 
+void codegen_var(codegen_t codegen, var_t var)
+{
+    array_t(declaration_t) variable_s = var_variable_s(var);
+
+    size_t size = array_size(variable_s);
+
+    for (size_t i = 0; i < size; i++)
+    {
+        declaration_t declaration = variable_s[i];
+        type_t type = declaration_type(declaration);
+        LLVMTypeRef llvm_type = codegen_type(codegen, type);
+
+        LLVMValueRef llvm_var = LLVMBuildAlloca(codegen->builder, llvm_type, "");
+        map_at(codegen->values, declaration, llvm_var);
+
+        variable_t variable = VARIABLE(declaration);
+        expression_t expression = variable_initializer(variable);
+        if (expression == NULL)
+            continue;
+
+        LLVMValueRef llvm_expression = codegen_expression(codegen, expression);
+
+        LLVMBuildStore(codegen->builder, llvm_expression, llvm_var);
+    }
+}
+
+void codegen_act(codegen_t codegen, act_t act)
+{
+    array_t(expression_t) expression_s = act_expression_s(act);
+    size_t size = array_size(expression_s);
+    for (int i = 0; i < size; i++)
+    {
+        expression_t expression = expression_s[i];
+        codegen_expression(codegen, expression);
+    }
+}
+
 void codegen_statement(codegen_t codegen, statement_t statement)
 {
     switch (statement_kind(statement)) // LCOV_EXCL_LINE
@@ -426,6 +511,10 @@ void codegen_statement(codegen_t codegen, statement_t statement)
             return codegen_return(codegen, RETURN(statement));
         case STATEMENT_IF:
             return codegen_if(codegen, IF(statement));
+        case STATEMENT_VAR:
+            return codegen_var(codegen, VAR(statement));
+        case STATEMENT_ACT:
+            return codegen_act(codegen, ACT(statement));
     }
 }
 
@@ -460,6 +549,30 @@ void codegen_function_prototype(codegen_t codegen, function_t function)
     }
 }
 
+void alloca_and_store_arguments(codegen_t codegen, function_t function)
+{
+    LLVMValueRef llvm_function = codegen->function;
+
+    array_t(declaration_t) argument_s = function_argument_s(function);
+    size_t size = array_size(argument_s);
+
+    LLVMValueRef llvmarg_s[size];
+    LLVMValueRef alloca_s[size];
+
+    for (size_t i = 0; i < size; i++)
+    {
+        llvmarg_s[i] = LLVMGetParam(llvm_function, i);
+        alloca_s[i] = LLVMBuildAlloca(codegen->builder, LLVMTypeOf(llvmarg_s[i]), "");
+    }
+
+    for (size_t i = 0; i < size; i++)
+    {
+        LLVMBuildStore(codegen->builder, llvmarg_s[i], alloca_s[i]);
+        declaration_t argument = argument_s[i];
+        map_at(codegen->values, argument, alloca_s[i]);
+    }
+}
+
 void codegen_function(codegen_t codegen, function_t function)
 {
     LLVMValueRef llvm_function = map_get(codegen->values, (declaration_t)function);
@@ -468,6 +581,8 @@ void codegen_function(codegen_t codegen, function_t function)
     LLVMPositionBuilderAtEnd(codegen->builder, entry);
 
     codegen->function = llvm_function;
+
+    alloca_and_store_arguments(codegen, function);
 
     statement_t statement = function_statement(function);
     codegen_statement(codegen, statement);

@@ -24,6 +24,8 @@ span_t parse_name(parser_t parser);
 declaration_t parse_argument(parser_t parser);
 unit_t parse_unit(parser_t parser);
 
+array_t(expression_t) scan_expression_s(parser_t parser);
+
 static inline
 lexer_t lexer(parser_t parser)
 {
@@ -61,12 +63,6 @@ cleanup_declaration_s:
 
 statement_t scan_block(parser_t parser)
 {
-    if (!is_open_brace(lexer(parser)))
-    {
-        display_error(parser, "expected statement");
-        goto leave_null;
-    }
-
     array_t(statement_t) statements = array_empty();
 
     while (!is_close_brace(lexer(parser)))
@@ -82,7 +78,6 @@ statement_t scan_block(parser_t parser)
 
 cleanup_statement_s:
     array_cleanup_free(statements, (release_t)statement_free);
-leave_null:
     return NULL;
 }
 
@@ -146,9 +141,80 @@ leave_null:;
     return NULL;
 }
 
+static
+statement_t scan_act(parser_t parser, bool require_semicolon)
+{
+    array_t(expression_t) expression_s = scan_expression_s(parser);
+    if (expression_s == NULL)
+        goto leave_null;
+
+    if (require_semicolon && !is_semicolon(lexer(parser)))
+    {
+        display_error(parser, "expected ';'");
+        goto leave_expression_s;
+    }
+
+    return act_new(expression_s);
+
+leave_expression_s:;
+    array_cleanup_free(expression_s, (release_t)expression_free);
+leave_null:;
+    return NULL;
+}
+
+static
+statement_t scan_var_or_expression_s(parser_t parser)
+{
+    type_t type = parse_type(parser);
+    if (type == NULL)
+        return scan_act(parser, true);
+
+    array_t(declaration_t) variable_s = array_empty();
+    while (true)
+    {
+        span_t identifier = parse_name(parser);
+        if (identifier.data == NULL)
+        {
+            display_error(parser, "expected identifier");
+            goto leave_variable_s;
+        }
+
+        expression_t initializer = NULL;
+        if (is_eq(lexer(parser)))
+        {
+            initializer = parse_expression(parser);
+            if (initializer == NULL)
+                goto leave_variable_s;
+        }
+
+        declaration_t variable = variable_new(type_clone(type), identifier, initializer);
+        variable_s = array_add(variable_s, variable);
+
+        if (is_semicolon(lexer(parser)))
+        {
+            type_free(type);
+            return var_new(variable_s);
+        }
+
+        if (!is_comma(lexer(parser)))
+        {
+            display_error(parser, "expected ',' or ';'");
+            goto leave_variable_s;
+        }
+    }
+
+leave_variable_s:
+    array_cleanup_free(variable_s, (release_t)declaration_free);
+    type_free(type);
+    return NULL;
+}
+
 statement_t parse_statement(parser_t parser)
 {
     lexer_t lex = lexer(parser);
+
+    if (is_open_brace(lex))
+        return scan_block(parser);
 
     if (is_keyword_return(lex))
         return finish_return(parser);
@@ -156,7 +222,7 @@ statement_t parse_statement(parser_t parser)
     if (is_keyword_if(lex))
         return finish_if(parser);
 
-    return scan_block(parser);
+    return scan_var_or_expression_s(parser);
 }
 
 declaration_t parse_argument(parser_t parser)
@@ -305,6 +371,19 @@ leave_null:;
     return NULL;
 }
 
+expression_t scan_constant(parser_t parser)
+{
+    lexer_t lex = lexer(parser);
+    if (is_integer_literal(lex))
+    {
+        char *end = NULL;
+        uint64_t u64 = strtoull(lex->span.data, &end, 10);
+        return constant_u64_new(u64);
+    }
+
+    return NULL;
+}
+
 expression_t finish_call(parser_t parser, expression_t callee)
 {
     if (is_close_paren(lexer(parser)))
@@ -329,26 +408,35 @@ leave_null:;
     return NULL;
 }
 
-expression_t identifier_suffix(parser_t parser, expression_t expression)
+expression_t finish_assignment(parser_t parser, expression_t lvalue)
+{
+    expression_t rvalue = parse_expression(parser);
+    if (rvalue == NULL)
+        goto leave_lvalue;
+
+    return assignment_new(lvalue, rvalue);
+
+leave_lvalue:;
+    expression_free(lvalue);
+    return NULL;
+}
+
+expression_t suffix(parser_t parser, expression_t expression)
 {
     lexer_t lex = lexer(parser);
     if (is_open_paren(lex))
-        return finish_call(parser, expression);
-
-    return expression;
-}
-
-expression_t scan_constant(parser_t parser)
-{
-    lexer_t lex = lexer(parser);
-    if (is_integer_literal(lex))
     {
-        char *end = NULL;
-        uint64_t u64 = strtoull(lex->span.data, &end, 10);
-        return constant_u64_new(u64);
+        expression = finish_call(parser, expression);
+        return suffix(parser, expression);
     }
 
-    return NULL;
+    if (is_eq(lex))
+    {
+        expression = finish_assignment(parser, expression);
+        return suffix(parser, expression);
+    }
+
+    return expression;
 }
 
 expression_t scan_identifier(parser_t parser)
@@ -361,7 +449,7 @@ expression_t scan_identifier(parser_t parser)
     }
 
     expression_t identifier = identifier_new(lex->span);
-    return identifier_suffix(parser, identifier);
+    return suffix(parser, identifier);
 }
 
 expression_t parse_primary(parser_t parser)

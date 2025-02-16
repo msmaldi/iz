@@ -114,9 +114,29 @@ void resolve_identifier(sema_t sema, identifier_t identifier)
     identifier_set_declaration(identifier, declaration);
 }
 
+expression_t implicit_cast(sema_t sema, expression_t expression, type_t expected_type)
+{
+    expression_kind_t kind = expression_kind(expression);
+
+    if (kind == EXPRESSION_IDENTIFIER)
+    {
+        declaration_t declaration = identifier_declaration(IDENTIFIER(expression));
+        type_t identifier_type = declaration_type(declaration);
+        if (type_eq(expected_type, identifier_type))
+        {
+            return implicit_cast_new(IMPLICIT_CAST_LVALUE_TO_RVALUE, expression);
+        }
+
+        display_error(unit_source(sema->unit), declaration_name(declaration), "incompatible type");
+        sema->errors++;
+    }
+
+    return expression;
+}
+
 void expression_analysis(sema_t sema, expression_t expression);
 
-static inline
+static
 void constant_analysis(sema_t sema, constant_t constant)
 {
     switch (constant_kind(constant)) // LCOV_EXCL_LINE
@@ -126,17 +146,23 @@ void constant_analysis(sema_t sema, constant_t constant)
     }
 }
 
-static inline
+static
 void binary_analysis(sema_t sema, binary_t binary)
 {
     expression_t lhs = binary_lhs(binary);
     expression_analysis(sema, lhs);
 
+    type_t type_lhs = expression_type(lhs);
+    binary_set_lhs(binary, implicit_cast(sema, lhs, type_lhs));
+
     expression_t rhs = binary_rhs(binary);
     expression_analysis(sema, rhs);
+
+    type_t type_rhs = expression_type(rhs);
+    binary_set_rhs(binary, implicit_cast(sema, rhs, type_rhs));
 }
 
-static inline
+static
 void call_analysis(sema_t sema, call_t call)
 {
     expression_t callee = call_callee(call);
@@ -149,6 +175,18 @@ void call_analysis(sema_t sema, call_t call)
         expression_t argument = argument_s[i];
         expression_analysis(sema, argument);
     }
+}
+
+static
+void assignment_analysis(sema_t sema, assignment_t assignment)
+{
+    expression_t lhs = assignment_lvalue(assignment);
+    expression_analysis(sema, lhs);
+
+    expression_t rhs = assignment_rvalue(assignment);
+    expression_analysis(sema, rhs);
+    type_t type_rhs = expression_type(rhs);
+    assignment_set_rvalue(assignment, implicit_cast(sema, rhs, type_rhs));
 }
 
 void expression_analysis(sema_t sema, expression_t expression)
@@ -167,12 +205,18 @@ void expression_analysis(sema_t sema, expression_t expression)
         case EXPRESSION_CALL:
             call_analysis(sema, CALL(expression));
             break;
+        case EXPRESSION_ASSIGNMENT:
+            assignment_analysis(sema, ASSIGNMENT(expression));
+            break;
+        case EXPRESSION_IMPLICIT_CAST:
+            // TODO: implement
+            break;
     }
 }
 
 void statement_analysis(sema_t sema, statement_t statement);
 
-static inline
+static
 void block_analysis(sema_t sema, block_t block)
 {
     array_t(statement_t) statement_s = block_statement_s(block);
@@ -184,7 +228,7 @@ void block_analysis(sema_t sema, block_t block)
     }
 }
 
-static inline
+static
 void return_analysis(sema_t sema, return_t ret)
 {
     expression_t expression = return_expression(ret);
@@ -198,10 +242,13 @@ void return_analysis(sema_t sema, return_t ret)
     {
         display_error(unit_source(sema->unit), function_name(sema->function), "return type mismatch");
         sema->errors++;
+        return;
     }
+
+    return_set_expression(ret, implicit_cast(sema, expression, expected));
 }
 
-static inline
+static
 void if_analysis(sema_t sema, if_t ifelse)
 {
     expression_analysis(sema, if_condition(ifelse));
@@ -211,6 +258,40 @@ void if_analysis(sema_t sema, if_t ifelse)
     statement_t else_branch = if_else_branch(ifelse);
     if (else_branch != NULL)
         statement_analysis(sema, else_branch);
+}
+
+static
+void var_analysis(sema_t sema, var_t var)
+{
+    array_t(declaration_t) declaration_s = var_variable_s(var);
+    size_t size = array_size(declaration_s);
+
+    for (int i = 0; i < size; i++)
+    {
+        declaration_t declaration = declaration_s[i];
+        if (!scope_add(sema->scope, declaration))
+        {
+            display_error(unit_source(sema->unit), declaration_name(declaration), "redefinition of");
+            sema->errors++;
+        }
+
+        variable_t variable = VARIABLE(declaration);
+        expression_t initializer = variable_initializer(variable);
+        if (initializer != NULL)
+            expression_analysis(sema, initializer);
+    }
+}
+
+static
+void act_analysis(sema_t sema, act_t act)
+{
+    array_t(expression_t) expression_s = act_expression_s(act);
+    size_t size = array_size(expression_s);
+    for (int i = 0; i < size; i++)
+    {
+        expression_t expression = expression_s[i];
+        expression_analysis(sema, expression);
+    }
 }
 
 void statement_analysis(sema_t sema, statement_t statement)
@@ -225,6 +306,12 @@ void statement_analysis(sema_t sema, statement_t statement)
             break;
         case STATEMENT_IF:
             if_analysis(sema, IF(statement));
+            break;
+        case STATEMENT_VAR:
+            var_analysis(sema, VAR(statement));
+            break;
+        case STATEMENT_ACT:
+            act_analysis(sema, ACT(statement));
             break;
     }
 }
@@ -276,6 +363,7 @@ void unit_analysis(sema_t sema, unit_t unit)
         {
             function_t function = FUNCTION(declaration);
             sema->function = function;
+
             function_analysis(sema, function);
             sema->function = NULL;
         }

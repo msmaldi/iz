@@ -50,6 +50,9 @@ typedef  struct assignment_t*          assignment_t;
 typedef  enum   implicit_cast_kind_t   implicit_cast_kind_t;
 typedef  struct implicit_cast_t*       implicit_cast_t;
 
+typedef  enum   conditional_kind_t     conditional_kind_t;
+typedef  struct conditional_t*         conditional_t;
+
 
 #include "ast/expression.h"
 #include "ast/statement.h"

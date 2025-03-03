@@ -2,8 +2,8 @@
 
 #include <ctype.h>
 
-#define keywords_len 5
-const char *keywords[keywords_len] = { "bool", "int", "return", "if", "else" };
+#define keywords_len 7
+const char *keywords[keywords_len] = { "bool", "int", "return", "if", "else", "true", "false" };
 
 struct lexer_t lexer_ctor(char *code)
 {
@@ -105,6 +105,16 @@ bool is_keyword_if(lexer_t lexer)
 bool is_keyword_else(lexer_t lexer)
 {
     return is_keyword(lexer, KEYWORD_ELSE);
+}
+
+bool is_keyword_true(lexer_t lexer)
+{
+    return is_keyword(lexer, KEYWORD_TRUE);
+}
+
+bool is_keyword_false(lexer_t lexer)
+{
+    return is_keyword(lexer, KEYWORD_FALSE);
 }
 
 bool is_identifier(lexer_t lexer)
@@ -291,6 +301,20 @@ token_kind_t match_multiplicative(lexer_t lexer)
 
     if (cursor[0] == '%')
         return match_found(lexer, TOKEN_PERCENT, cursor, 1);
+
+    return TOKEN_UNEXPECTED;
+}
+
+token_kind_t match_conditional(lexer_t lexer)
+{
+    skip_whitespaces(lexer);
+    char *cursor = lexer->cursor;
+
+    if (cursor[0] == '&' && cursor[1] == '&')
+        return match_found(lexer, TOKEN_AND_AND, cursor, 2);
+
+    if (cursor[0] == '|' && cursor[1] == '|')
+        return match_found(lexer, TOKEN_OR_OR, cursor, 2);
 
     return TOKEN_UNEXPECTED;
 }

@@ -24,6 +24,9 @@ enum token_kind_t
     TOKEN_SLASH,
     TOKEN_PERCENT,
     TOKEN_EQ,
+
+    TOKEN_AND_AND,
+    TOKEN_OR_OR,
 };
 
 typedef enum keyword_t keyword_t;
@@ -34,6 +37,8 @@ enum keyword_t
     KEYWORD_RETURN,
     KEYWORD_IF,
     KEYWORD_ELSE,
+    KEYWORD_TRUE,
+    KEYWORD_FALSE,
 };
 
 typedef char* cursor_t;
@@ -69,6 +74,8 @@ bool is_keyword_int(lexer_t lexer);
 bool is_keyword_return(lexer_t lexer);
 bool is_keyword_if(lexer_t lexer);
 bool is_keyword_else(lexer_t lexer);
+bool is_keyword_true(lexer_t lexer);
+bool is_keyword_false(lexer_t lexer);
 
 bool is_identifier(lexer_t lexer);
 
@@ -87,5 +94,7 @@ token_kind_t match_equality(lexer_t lexer);
 token_kind_t match_comparison(lexer_t lexer);
 token_kind_t match_additive(lexer_t lexer);
 token_kind_t match_multiplicative(lexer_t lexer);
+
+token_kind_t match_conditional(lexer_t lexer);
 
 #endif

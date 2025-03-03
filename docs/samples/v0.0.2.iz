@@ -31,5 +31,8 @@ int fib_else(int n)
         return fib(n - 1) + fib(n - 2);
 }
 
-int one()
-    return 1 + 2 * 2 / 2 % 2;
+int two()
+    return 2 * 1;
+
+int three()
+    return 2 + 2 / 2;

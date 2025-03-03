@@ -256,6 +256,11 @@ LLVMValueRef codegen_constant(codegen_t codegen, constant_t constant)
 {
     switch (constant_kind(constant)) // LCOV_EXCL_LINE
     {
+        case CONSTANT_BOOL:
+        {
+            bool _bool = constant_bool(constant);
+            return LLVMConstInt(LLVMInt1TypeInContext(codegen->context), _bool, 0);
+        }
         case CONSTANT_U64:
         {
             u_int64_t u64 = constant_u64(constant);
@@ -364,6 +369,30 @@ LLVMValueRef codegen_implicit_cast(codegen_t codegen, implicit_cast_t implicit_c
     return NULL;
 }
 
+LLVMValueRef codegen_conditional(codegen_t codegen, conditional_t conditional)
+{
+    LLVMValueRef lhs = codegen_expression(codegen, conditional_lhs(conditional));
+    LLVMValueRef rhs = codegen_expression(codegen, conditional_rhs(conditional));
+
+    LLVMBasicBlockRef rhsBlock = LLVMAppendBasicBlock(codegen->function, "cond.rhs");
+    LLVMBasicBlockRef mergeBlock = LLVMAppendBasicBlock(codegen->function, "cond.merge");
+    LLVMValueRef temp = LLVMBuildAlloca(codegen->builder, LLVMTypeOf(lhs), "");
+
+    LLVMBuildStore(codegen->builder, lhs, temp);
+
+    if (conditional_op(conditional) == CONDITIONAL_AND)
+        LLVMBuildCondBr(codegen->builder, lhs, rhsBlock, mergeBlock);
+    if (conditional_op(conditional) == CONDITIONAL_OR)
+        LLVMBuildCondBr(codegen->builder, lhs, mergeBlock, rhsBlock);
+
+    LLVMPositionBuilderAtEnd(codegen->builder, rhsBlock);
+    LLVMBuildStore(codegen->builder, rhs, temp);
+    LLVMBuildBr(codegen->builder, mergeBlock);
+
+    LLVMPositionBuilderAtEnd(codegen->builder, mergeBlock);
+    return LLVMBuildLoad2(codegen->builder, LLVMInt1TypeInContext(codegen->context), temp, "");
+}
+
 LLVMValueRef codegen_expression(codegen_t codegen, expression_t expression)
 {
     switch (expression_kind(expression)) // LCOV_EXCL_LINE
@@ -380,7 +409,8 @@ LLVMValueRef codegen_expression(codegen_t codegen, expression_t expression)
             return codegen_assignment(codegen, ASSIGNMENT(expression));
         case EXPRESSION_IMPLICIT_CAST:
             return codegen_implicit_cast(codegen, IMPLICIT_CAST(expression));
-            break;
+        case EXPRESSION_CONDITIONAL:
+            return codegen_conditional(codegen, CONDITIONAL(expression));
     }
     return NULL;
 }

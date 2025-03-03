@@ -4,6 +4,7 @@
 #include <string.h>
 #include <cmocka.h>
 
+#include "ast/ast_print.h"
 #include "parser/parser.h"
 #include "sema/sema.h"
 
@@ -37,6 +38,17 @@ static void success_branch(void **arg)
         unit_t unit = syntax_analysis(code_v003);
         compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
         assert_non_null(compilation);
+
+        compilation_free(compilation);
+    }
+
+    {
+        source_t code_v004 = source_load("../docs/samples/v0.0.4.iz");
+        unit_t unit = syntax_analysis(code_v004);
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_non_null(compilation);
+
+        compilation_print(compilation, stdout);
 
         compilation_free(compilation);
     }

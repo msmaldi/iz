@@ -24,6 +24,8 @@ static void test_data(void **arg)
         assert_true(is_keyword_return(lexer_alloc("return")));
         assert_true(is_keyword_if(lexer_alloc("if")));
         assert_true(is_keyword_else(lexer_alloc("else")));
+        assert_true(is_keyword_true(lexer_alloc("true")));
+        assert_true(is_keyword_false(lexer_alloc("false")));
     }
 
     {
@@ -73,11 +75,21 @@ static void test_data(void **arg)
         assert_int_equal(TOKEN_GT, match_comparison(lexer_alloc(">")));
         assert_int_equal(TOKEN_LT_EQ, match_comparison(lexer_alloc("<=")));
         assert_int_equal(TOKEN_GT_EQ, match_comparison(lexer_alloc(">=")));
+
         assert_int_equal(TOKEN_EQ_EQ, match_equality(lexer_alloc("==")));
         assert_int_equal(TOKEN_NO_EQ, match_equality(lexer_alloc("!=")));
+
         assert_int_equal(TOKEN_PLUS, match_additive(lexer_alloc("+")));
         assert_int_equal(TOKEN_MINUS, match_additive(lexer_alloc("-")));
+
+        assert_int_equal(TOKEN_STAR, match_multiplicative(lexer_alloc("*")));
+        assert_int_equal(TOKEN_SLASH, match_multiplicative(lexer_alloc("/")));
+        assert_int_equal(TOKEN_PERCENT, match_multiplicative(lexer_alloc("%")));
+
         assert_int_equal(TOKEN_EQ, match_assignment(lexer_alloc("=")));
+
+        assert_int_equal(TOKEN_AND_AND, match_conditional(lexer_alloc("&&")));
+        assert_int_equal(TOKEN_OR_OR, match_conditional(lexer_alloc("||")));
 
         assert_int_equal(TOKEN_UNEXPECTED, match_equality(lexer_alloc("=")));
         assert_int_equal(TOKEN_UNEXPECTED, match_equality(lexer_alloc("!")));
@@ -86,6 +98,8 @@ static void test_data(void **arg)
         assert_int_equal(TOKEN_UNEXPECTED, match_additive(lexer_alloc("")));
         assert_int_equal(TOKEN_UNEXPECTED, match_assignment(lexer_alloc("")));
         assert_int_equal(TOKEN_UNEXPECTED, match_assignment(lexer_alloc("==")));
+        assert_int_equal(TOKEN_UNEXPECTED, match_conditional(lexer_alloc("&")));
+        assert_int_equal(TOKEN_UNEXPECTED, match_conditional(lexer_alloc("|")));
     }
 
 

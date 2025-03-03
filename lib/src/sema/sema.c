@@ -141,6 +141,7 @@ void constant_analysis(sema_t sema, constant_t constant)
 {
     switch (constant_kind(constant)) // LCOV_EXCL_LINE
     {
+        case CONSTANT_BOOL:
         case CONSTANT_U64:
             break;
     }
@@ -189,6 +190,16 @@ void assignment_analysis(sema_t sema, assignment_t assignment)
     assignment_set_rvalue(assignment, implicit_cast(sema, rhs, type_rhs));
 }
 
+static
+void condition_analysis(sema_t sema, conditional_t conditional)
+{
+    expression_t lhs = conditional_lhs(conditional);
+    expression_analysis(sema, lhs);
+
+    expression_t rhs = conditional_rhs(conditional);
+    expression_analysis(sema, rhs);
+}
+
 void expression_analysis(sema_t sema, expression_t expression)
 {
     switch (expression_kind(expression)) // LCOV_EXCL_LINE
@@ -210,6 +221,9 @@ void expression_analysis(sema_t sema, expression_t expression)
             break;
         case EXPRESSION_IMPLICIT_CAST:
             // TODO: implement
+            break;
+        case EXPRESSION_CONDITIONAL:
+            condition_analysis(sema, CONDITIONAL(expression));
             break;
     }
 }

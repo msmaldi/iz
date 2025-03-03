@@ -1,0 +1,14 @@
+bool is_true()
+    return true;
+
+bool is_false()
+    return false;
+
+bool very_true()
+    return true && true;
+
+bool very_false()
+    return false || false;
+
+bool is_leap_year(int year)
+    return year % 4 == 0 && year % 100 != 0 || year % 400 == 0;

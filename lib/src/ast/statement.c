@@ -203,7 +203,7 @@ bool statement_all_path_return_value(statement_t statement)
         case STATEMENT_ACT:
             return false;
     }
-    return NULL;
+    __builtin_unreachable();
 }
 
 array_t(statement_t) block_statement_s(block_t block)

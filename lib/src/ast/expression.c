@@ -6,6 +6,7 @@ struct constant_t
     union
     {
         uint64_t u64;
+        bool _bool;
     };
     constant_kind_t kind;
 };
@@ -18,7 +19,7 @@ struct identifier_t
 
 struct binary_t
 {
-    expression_t  lhs, rhs;
+    expression_t lhs, rhs;
     binary_kind_t op;
 };
 
@@ -40,6 +41,12 @@ struct implicit_cast_t
     expression_t expression;
 };
 
+struct conditional_t
+{
+    expression_t lhs, rhs;
+    conditional_kind_t op;
+};
+
 struct expression_t
 {
     union
@@ -50,6 +57,7 @@ struct expression_t
         struct call_t          call;
         struct assignment_t    assignment;
         struct implicit_cast_t implicit_cast;
+        struct conditional_t   conditional;
     };
     expression_kind_t kind;
 };
@@ -59,6 +67,17 @@ expression_t expression_new(expression_kind_t kind)
 {
     expression_t expression = mem_alloc(sizeof(struct expression_t));
     expression->kind = kind;
+    return expression;
+}
+
+expression_t constant_bool_new(bool _bool)
+{
+    expression_t expression = expression_new(EXPRESSION_CONSTANT);
+
+    constant_t constant = CONSTANT(expression);
+    constant->kind = CONSTANT_BOOL;
+    constant->_bool = _bool;
+
     return expression;
 }
 
@@ -120,6 +139,17 @@ expression_t implicit_cast_new(implicit_cast_kind_t kind, expression_t lvalue)
     return expression;
 }
 
+expression_t conditional_new(expression_t lhs, conditional_kind_t op, expression_t rhs)
+{
+    expression_t expression = expression_new(EXPRESSION_CONDITIONAL);
+    conditional_t conditional = CONDITIONAL(expression);
+    conditional->lhs = lhs;
+    conditional->rhs = rhs;
+    conditional->op = op;
+
+    return expression;
+}
+
 static
 void binary_free(binary_t binary)
 {
@@ -147,6 +177,13 @@ void implict_cast_free(implicit_cast_t implicit_cast)
     expression_free(implicit_cast->expression);
 }
 
+static
+void conditional_free(conditional_t conditional)
+{
+    expression_free(conditional->lhs);
+    expression_free(conditional->rhs);
+}
+
 void expression_free(expression_t expression)
 {
     switch (expression->kind) // LCOV_EXCL_LINE
@@ -166,6 +203,9 @@ void expression_free(expression_t expression)
         case EXPRESSION_IMPLICIT_CAST:
             implict_cast_free(IMPLICIT_CAST(expression));
             break;
+        case EXPRESSION_CONDITIONAL:
+            conditional_free(CONDITIONAL(expression));
+            break;
     }
 
     mem_free(expression);
@@ -184,6 +224,11 @@ constant_kind_t constant_kind(constant_t constant)
 uint64_t constant_u64(constant_t constant)
 {
     return constant->u64;
+}
+
+bool constant_bool(constant_t constant)
+{
+    return constant->_bool;
 }
 
 span_t identifier_name(identifier_t identifier)
@@ -261,11 +306,28 @@ expression_t implicit_cast_expression(implicit_cast_t implicit_cast)
     return implicit_cast->expression;
 }
 
+expression_t conditional_lhs(conditional_t conditional)
+{
+    return conditional->lhs;
+}
+
+expression_t conditional_rhs(conditional_t conditional)
+{
+    return conditional->rhs;
+}
+
+conditional_kind_t conditional_op(conditional_t conditional)
+{
+    return conditional->op;
+}
+
 static
 type_t constant_type(constant_t constant)
 {
     switch (constant_kind(constant)) // LCOV_EXCL_LINE
     {
+        case CONSTANT_BOOL:
+            return type_bool();
         case CONSTANT_U64:
             return type_int();
     }
@@ -329,6 +391,12 @@ type_t implicit_cast_type(implicit_cast_t implicit_cast)
     return expression_type(implicit_cast_expression(implicit_cast));
 }
 
+static
+type_t conditional_type(conditional_t conditional)
+{
+    return type_bool();
+}
+
 type_t expression_type(expression_t expression)
 {
     switch (expression_kind(expression)) // LCOV_EXCL_LINE
@@ -345,6 +413,8 @@ type_t expression_type(expression_t expression)
             return assignment_type(ASSIGNMENT(expression));
         case EXPRESSION_IMPLICIT_CAST:
             return implicit_cast_type(IMPLICIT_CAST(expression));
+        case EXPRESSION_CONDITIONAL:
+            return conditional_type(CONDITIONAL(expression));
     }
     __builtin_unreachable();
 }
@@ -379,6 +449,11 @@ assignment_t ASSIGNMENT(expression_t expression)
 implicit_cast_t IMPLICIT_CAST(expression_t expression)
 {
     return &expression->implicit_cast;
+}
+
+conditional_t CONDITIONAL(expression_t expression)
+{
+    return &expression->conditional;
 }
 
 const char* binary_kind_string(binary_kind_t kind)

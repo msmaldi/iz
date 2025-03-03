@@ -374,6 +374,12 @@ leave_null:;
 expression_t scan_constant(parser_t parser)
 {
     lexer_t lex = lexer(parser);
+
+    if (is_keyword_true(lex))
+        return constant_bool_new(true);
+    if (is_keyword_false(lex))
+        return constant_bool_new(false);
+
     if (is_integer_literal(lex))
     {
         char *end = NULL;
@@ -554,9 +560,29 @@ expression_t scan_equality(parser_t parser)
     }
 }
 
+expression_t scan_conditional(parser_t parser)
+{
+    expression_t lhs = scan_equality(parser);
+    while (true)
+    {
+        token_kind_t token_kind = match_conditional(lexer(parser));
+        switch (token_kind)
+        {
+            case TOKEN_AND_AND:
+                lhs = conditional_new(lhs, CONDITIONAL_AND, scan_equality(parser));
+                break;
+            case TOKEN_OR_OR:
+                lhs = conditional_new(lhs, CONDITIONAL_OR, scan_equality(parser));
+                break;
+            default:
+                return lhs;
+        }
+    }
+}
+
 expression_t parse_expression(parser_t parser)
 {
-    return scan_equality(parser);
+    return scan_conditional(parser);
 }
 
 #define RESET       "\033[0m"

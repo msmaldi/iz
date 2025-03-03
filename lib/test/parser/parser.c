@@ -36,6 +36,15 @@ static void success_branch(void **arg)
 
         unit_free(unit);
     }
+
+
+    {
+        source_t code_v004 = source_load("../docs/samples/v0.0.4.iz");
+
+        unit_t unit = syntax_analysis(code_v004);
+
+        unit_free(unit);
+    }
 }
 
 static void failure_branch(void **arg)

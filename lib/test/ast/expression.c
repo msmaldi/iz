@@ -95,6 +95,29 @@ static void test_data(void **arg)
 
         expression_free(assignment_expr);
     }
+
+    {
+        span_t name = span_sz("n");
+        expression_t n_expr = identifier_new(name);
+
+        uint64_t one = 1;
+        expression_t one_expr = constant_u64_new(one);
+
+        expression_t expression = conditional_new(n_expr, CONDITIONAL_AND, one_expr);
+
+        type_t type_actual = expression_type(expression);
+        type_t type_expected = type_bool();
+        assert_int_equal(type_expected, type_actual);
+
+        conditional_t conditional = CONDITIONAL(expression);
+        assert_non_null(conditional);
+
+        assert_int_equal(n_expr, conditional_lhs(conditional));
+        assert_int_equal(one_expr, conditional_rhs(conditional));
+        assert_int_equal(CONDITIONAL_AND, conditional_op(conditional));
+
+        expression_free(expression);
+    }
 }
 
 int main()

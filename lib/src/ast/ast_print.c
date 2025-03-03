@@ -78,6 +78,9 @@ static
 void binary_print(binary_t binary, FILE* out, int tab);
 
 static
+void conditional_print(conditional_t conditional, FILE* out, int tab);
+
+static
 void call_print(call_t call, FILE* out, int tab);
 
 void compilation_print(compilation_t compilation, FILE* out)
@@ -343,6 +346,8 @@ void expression_print(expression_t expression, FILE* out, int tab)
         case EXPRESSION_CALL:
             call_print(CALL(expression), out, tab);
             break;
+        case EXPRESSION_CONDITIONAL:
+            conditional_print(CONDITIONAL(expression), out, tab);
         default:
             break;
     }
@@ -355,10 +360,14 @@ void constant_print(constant_t constant, FILE* out, int tab)
 
     switch (constant_kind(constant))
     {
+        case CONSTANT_BOOL:
+        {
+            const char *str = constant_bool(constant) ? "true" : "false";
+            fprintf(out, BOLDGREEN "constant_t" BOLDYELLOW " %p" RESET " %s\n" RESET, constant, str);
+            break;
+        }
         case CONSTANT_U64:
             fprintf(out, BOLDGREEN "constant_t" BOLDYELLOW " %p" RESET " %zu\n" RESET, constant, constant_u64(constant));
-            break;
-        default:
             break;
     }
 }
@@ -407,6 +416,17 @@ void binary_print(binary_t binary, FILE* out, int tab)
     expression_print(binary_lhs(binary), out, tab + 1);
     expression_print(binary_rhs(binary), out, tab + 1);
 }
+
+static
+void conditional_print(conditional_t conditional, FILE* out, int tab)
+{
+    tab_print(tab, out);
+    const char *conditional_kind_str = conditional_op(conditional) == CONDITIONAL_AND ? "&&" : "||";
+    const char *format = BOLDGREEN "%s" BOLDYELLOW " %p" WHITE " '" BLUE "%s" WHITE "'" "\n" RESET;
+    fprintf(out, format, "conditional_t", conditional, conditional_kind_str);
+
+    expression_print(conditional_lhs(conditional), out, tab + 1);
+    expression_print(conditional_rhs(conditional), out, tab + 1);}
 
 static
 void call_print(call_t call, FILE* out, int tab)

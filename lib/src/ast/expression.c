@@ -380,3 +380,22 @@ implicit_cast_t IMPLICIT_CAST(expression_t expression)
 {
     return &expression->implicit_cast;
 }
+
+const char* binary_kind_string(binary_kind_t kind)
+{
+    switch (kind)
+    {
+        case BINARY_ADD: return "+";
+        case BINARY_SUB: return "-";
+        case BINARY_MUL: return "*";
+        case BINARY_DIV: return "/";
+        case BINARY_REM: return "%";
+        case BINARY_EQ:  return "==";
+        case BINARY_NE:  return "!=";
+        case BINARY_LT:  return "<";
+        case BINARY_LE:  return "<=";
+        case BINARY_GT:  return ">";
+        case BINARY_GE:  return ">=";
+    }
+    __builtin_unreachable();
+}

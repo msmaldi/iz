@@ -10,7 +10,7 @@ enum expression_kind_t
     EXPRESSION_BINARY,
     EXPRESSION_CALL,
     EXPRESSION_ASSIGNMENT,
-    EXPRESSION_IMPLICIT_CAST,
+    EXPRESSION_IMPLICIT_CAST
 };
 
 enum constant_kind_t
@@ -32,7 +32,7 @@ enum binary_kind_t
 
     BINARY_MUL,
     BINARY_DIV,
-    BINARY_REM,
+    BINARY_REM
 };
 
 enum implicit_cast_kind_t
@@ -83,5 +83,7 @@ binary_t        BINARY(expression_t expression);
 call_t          CALL(expression_t expression);
 assignment_t    ASSIGNMENT(expression_t expression);
 implicit_cast_t IMPLICIT_CAST(expression_t expression);
+
+const char* binary_kind_string(binary_kind_t kind);
 
 #endif

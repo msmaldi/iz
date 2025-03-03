@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "ast/ast.h"
+#include "ast/ast_print.h"
 #include "common/source.h"
 #include "parser/parser.h"
 #include "sema/sema.h"
@@ -25,6 +26,8 @@ int main(int argc, char *argv[])
     compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
     if (compilation == NULL)
         return 1;
+
+    compilation_print(compilation, stdout);
 
     backend_t backend = backend_codegen(compilation);
 

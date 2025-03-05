@@ -22,7 +22,7 @@ static void success_branch(void **arg)
         assert_non_null(backend);
 
         assert_true(backend_validate(backend));
-        //backend_optimize(backend);
+        backend_optimize(backend);
         backend_dump(backend);
         backend_emit_object(backend);
         backend_emit_assembly(backend);

@@ -211,6 +211,11 @@ expression_t variable_initializer(variable_t variable)
     return variable->initializer;
 }
 
+void variable_set_initializer(variable_t variable, expression_t initializer)
+{
+    variable->initializer = initializer;
+}
+
 function_t FUNCTION(declaration_t declaration)
 {
     return &declaration->function;

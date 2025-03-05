@@ -7,6 +7,7 @@
 #include "sema/sema.h"
 #include "llvm/backend.h"
 
+// LCOV_EXCL_START
 int main(int argc, char *argv[])
 {
     if (argc == 1)
@@ -40,3 +41,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+// LCOV_EXCL_STOP

@@ -311,9 +311,19 @@ expression_t conditional_lhs(conditional_t conditional)
     return conditional->lhs;
 }
 
+void conditional_set_lhs(conditional_t conditional, expression_t lhs)
+{
+    conditional->lhs = lhs;
+}
+
 expression_t conditional_rhs(conditional_t conditional)
 {
     return conditional->rhs;
+}
+
+void conditional_set_rhs(conditional_t conditional, expression_t rhs)
+{
+    conditional->rhs = rhs;
 }
 
 conditional_kind_t conditional_op(conditional_t conditional)

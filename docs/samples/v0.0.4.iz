@@ -12,3 +12,9 @@ bool very_false()
 
 bool is_leap_year(int year)
     return year % 4 == 0 && year % 100 != 0 || year % 400 == 0;
+
+bool op_and(bool lhs, bool rhs)
+    return lhs && rhs;
+
+bool op_or(bool lhs, bool rhs)
+    return op_and(lhs, rhs) == false;

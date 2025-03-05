@@ -89,7 +89,9 @@ implicit_cast_kind_t implicit_cast_kind(implicit_cast_t implicit_cast);
 expression_t         implicit_cast_expression(implicit_cast_t implicit_cast);
 
 expression_t   conditional_lhs(conditional_t conditional);
+void           conditional_set_lhs(conditional_t conditional, expression_t lhs);
 expression_t   conditional_rhs(conditional_t conditional);
+void           conditional_set_rhs(conditional_t conditional, expression_t rhs);
 conditional_kind_t conditional_op(conditional_t conditional);
 
 constant_t      CONSTANT(expression_t expression);

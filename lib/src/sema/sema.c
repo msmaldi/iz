@@ -175,6 +175,9 @@ void call_analysis(sema_t sema, call_t call)
     {
         expression_t argument = argument_s[i];
         expression_analysis(sema, argument);
+
+        type_t type = expression_type(argument); // TODO: check ttype is compatihle with function argument
+        argument_s[i] = implicit_cast(sema, argument, type);
     }
 }
 
@@ -195,9 +198,13 @@ void condition_analysis(sema_t sema, conditional_t conditional)
 {
     expression_t lhs = conditional_lhs(conditional);
     expression_analysis(sema, lhs);
+    type_t type_lhs = expression_type(lhs);
+    conditional_set_lhs(conditional, implicit_cast(sema, lhs, type_lhs));
 
     expression_t rhs = conditional_rhs(conditional);
     expression_analysis(sema, rhs);
+    type_t type_rhs = expression_type(rhs);
+    conditional_set_rhs(conditional, implicit_cast(sema, rhs, type_rhs));
 }
 
 void expression_analysis(sema_t sema, expression_t expression)
@@ -283,16 +290,31 @@ void var_analysis(sema_t sema, var_t var)
     for (int i = 0; i < size; i++)
     {
         declaration_t declaration = declaration_s[i];
+
+        variable_t variable = VARIABLE(declaration);
+        expression_t initializer = variable_initializer(variable);
+        if (initializer != NULL)
+        {
+            expression_analysis(sema, initializer);
+
+            type_t expr_type = expression_type(initializer);
+            type_t var_type = variable_type(variable);
+
+            if (!type_eq(var_type, expr_type))
+            {
+                display_error(unit_source(sema->unit), declaration_name(declaration), "incompatible type");
+                sema->errors++;
+            }
+
+            expression_t implicit_cast_transformation = implicit_cast(sema, initializer, variable_type(variable));
+            variable_set_initializer(variable, implicit_cast_transformation);
+        }
+
         if (!scope_add(sema->scope, declaration))
         {
             display_error(unit_source(sema->unit), declaration_name(declaration), "redefinition of");
             sema->errors++;
         }
-
-        variable_t variable = VARIABLE(declaration);
-        expression_t initializer = variable_initializer(variable);
-        if (initializer != NULL)
-            expression_analysis(sema, initializer);
     }
 }
 

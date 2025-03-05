@@ -51,6 +51,9 @@ static
 void statement_print(statement_t statement, FILE* out, int tab);
 
 static
+void act_print(act_t act, FILE* out, int tab);
+
+static
 void block_print(block_t block, FILE* out, int tab);
 
 static
@@ -82,6 +85,9 @@ void conditional_print(conditional_t conditional, FILE* out, int tab);
 
 static
 void call_print(call_t call, FILE* out, int tab);
+
+static
+void assignment_print(assignment_t assignment, FILE* out, int tab);
 
 void compilation_print(compilation_t compilation, FILE* out)
 {
@@ -118,7 +124,7 @@ void unit_print(unit_t unit, FILE* out, int tab)
 static
 void declaration_print(declaration_t declaration, FILE* out, int tab)
 {
-    switch (declaration_kind(declaration))
+    switch (declaration_kind(declaration)) // LCOV_EXCL_LINE
     {
         case DECLARATION_FUNCTION:
             function_print(FUNCTION(declaration), out, tab);
@@ -199,19 +205,17 @@ void variable_print(variable_t variable, FILE* out, int tab)
 static
 void type_print(type_t type, FILE* out)
 {
-    switch (type_kind(type))
+    switch (type_kind(type)) // LCOV_EXCL_LINE
     {
-    case TYPE_INT:
-        fprintf(out, CYAN "int" RESET);
-        break;
-    case TYPE_BOOL:
-        fprintf(out, CYAN "bool" RESET);
-        break;
-    case TYPE_CALLABLE:
-        callable_print(CALLABLE(type), out);
-        break;
-    default:
-        break;
+        case TYPE_INT:
+            fprintf(out, CYAN "int" RESET);
+            break;
+        case TYPE_BOOL:
+            fprintf(out, CYAN "bool" RESET);
+            break;
+        case TYPE_CALLABLE:
+            callable_print(CALLABLE(type), out);
+            break;
     }
 }
 
@@ -235,24 +239,40 @@ void callable_print(callable_t callable, FILE* out)
 static
 void statement_print(statement_t statement, FILE* out, int tab)
 {
-    switch (statement_kind(statement))
+    switch (statement_kind(statement)) // LCOV_EXCL_LINE
     {
-    case STATEMENT_RETURN:
-        return_print(RETURN(statement), out, tab);
-        break;
-    case STATEMENT_ACT:
-        break;
-    case STATEMENT_VAR:
-        var_print(VAR(statement), out, tab);
-        break;
-    case STATEMENT_BLOCK:
-        block_print(BLOCK(statement), out, tab);
-        break;
-    case STATEMENT_IF:
-        if_print(IF(statement), out, tab);
-        break;
-    default:
-        break;
+        case STATEMENT_RETURN:
+            return_print(RETURN(statement), out, tab);
+            break;
+        case STATEMENT_VAR:
+            var_print(VAR(statement), out, tab);
+            break;
+        case STATEMENT_BLOCK:
+            block_print(BLOCK(statement), out, tab);
+            break;
+        case STATEMENT_IF:
+            if_print(IF(statement), out, tab);
+            break;
+        case STATEMENT_ACT:
+            act_print(ACT(statement), out, tab);
+            break;
+    }
+}
+
+static
+void act_print(act_t act, FILE* out, int tab)
+{
+    tab_print(tab, out);
+
+    const char *format = BOLDCYAN "%s" BOLDYELLOW " %p\n" RESET;
+    fprintf(out, format, "act_t", act);
+
+    array_t(expression_t) expression_s = act_expression_s(act);
+    size_t size = array_size(expression_s);
+
+    for (int i = 0; i < size; i++)
+    {
+        expression_print(expression_s[i], out, tab + 1);
     }
 }
 
@@ -329,7 +349,7 @@ void var_print(var_t var, FILE* out, int tab)
 static
 void expression_print(expression_t expression, FILE* out, int tab)
 {
-    switch (expression_kind(expression))
+    switch (expression_kind(expression)) // LCOV_EXCL_LINE
     {
         case EXPRESSION_CONSTANT:
             constant_print(CONSTANT(expression), out, tab);
@@ -348,7 +368,9 @@ void expression_print(expression_t expression, FILE* out, int tab)
             break;
         case EXPRESSION_CONDITIONAL:
             conditional_print(CONDITIONAL(expression), out, tab);
-        default:
+            break;
+        case EXPRESSION_ASSIGNMENT:
+            assignment_print(ASSIGNMENT(expression), out, tab);
             break;
     }
 }
@@ -358,7 +380,7 @@ void constant_print(constant_t constant, FILE* out, int tab)
 {
     tab_print(tab, out);
 
-    switch (constant_kind(constant))
+    switch (constant_kind(constant)) // LCOV_EXCL_LINE
     {
         case CONSTANT_BOOL:
         {
@@ -445,4 +467,16 @@ void call_print(call_t call, FILE* out, int tab)
     {
         expression_print(argument_s[i], out, tab + 1);
     }
+}
+
+static
+void assignment_print(assignment_t assignment, FILE* out, int tab)
+{
+    tab_print(tab, out);
+
+    const char *format = BOLDGREEN "assignment_t" BOLDYELLOW " %p\n" RESET;
+    fprintf(out, format, assignment);
+
+    expression_print(assignment_lvalue(assignment), out, tab + 1);
+    expression_print(assignment_rvalue(assignment), out, tab + 1);
 }

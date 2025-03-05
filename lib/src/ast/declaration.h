@@ -32,6 +32,7 @@ span_t       argument_name(argument_t argument);
 type_t          variable_type(variable_t variable);
 span_t          variable_name(variable_t variable);
 expression_t    variable_initializer(variable_t variable);
+void            variable_set_initializer(variable_t variable, expression_t initializer);
 
 function_t FUNCTION(declaration_t declaration);
 argument_t ARGUMENT(declaration_t declaration);

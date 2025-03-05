@@ -1,4 +1,4 @@
 lcov_branch_coverage = 1
 lcov_excl_line = LCOV_EXCL_LINE|__builtin_unreachable
 lcov_excl_br_line = LCOV_EXCL_BR_LINE|__builtin_unreachable
-lcov_excl_function = LCOV_EXCL_FUNCTION|main
+lcov_excl_func = main

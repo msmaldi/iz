@@ -176,7 +176,7 @@ void call_analysis(sema_t sema, call_t call)
         expression_t argument = argument_s[i];
         expression_analysis(sema, argument);
 
-        type_t type = expression_type(argument); // TODO: check ttype is compatihle with function argument
+        type_t type = expression_type(argument); // TODO: check type is compatihle with function argument
         argument_s[i] = implicit_cast(sema, argument, type);
     }
 }
@@ -189,7 +189,7 @@ void assignment_analysis(sema_t sema, assignment_t assignment)
 
     expression_t rhs = assignment_rvalue(assignment);
     expression_analysis(sema, rhs);
-    type_t type_rhs = expression_type(rhs);
+    type_t type_rhs = expression_type(rhs); // TODO: check type is compatihle with function argument
     assignment_set_rvalue(assignment, implicit_cast(sema, rhs, type_rhs));
 }
 
@@ -240,6 +240,7 @@ void statement_analysis(sema_t sema, statement_t statement);
 static
 void block_analysis(sema_t sema, block_t block)
 {
+    enter_scope(sema);
     array_t(statement_t) statement_s = block_statement_s(block);
     size_t size = array_size(statement_s);
     for (int i = 0; i < size; i++)
@@ -247,6 +248,7 @@ void block_analysis(sema_t sema, block_t block)
         statement_t statement = statement_s[i];
         statement_analysis(sema, statement);
     }
+    leave_scope(sema);
 }
 
 static

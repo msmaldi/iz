@@ -33,6 +33,18 @@ Este projeto é uma aplicação para um simples compilador.
 
 ```
 
+## Build and Install
+
+Project is developed in ubuntu 24.04, to build and install:
+
+``` bash
+sudo apt install meson ninja-build clang llvm-dev libcmocka-dev lld pkg-config lcov
+./script/build.sh
+sudo ninja -C builddir install
+
+```
+
+
 
 
 

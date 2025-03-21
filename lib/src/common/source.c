@@ -33,9 +33,9 @@ source_t source_load(const char *path)
     lseek(fd, 0, SEEK_SET);
 
     char *code = mem_alloc(size + 100);
-    read(fd, code, size);
+    ssize_t read_size = read(fd, code, size);
 
-    code[size] = '\0';
+    code[read_size] = '\0';
 
     close(fd);
 

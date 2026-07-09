@@ -48,6 +48,13 @@ struct conditional_t
     conditional_kind_t op;
 };
 
+struct unary_t
+{
+    unary_kind_t op;
+    expression_t expression;
+    type_t       type; // memoized pointer type for UNARY_ADDRESS_OF; unused (NULL) for UNARY_DEREF
+};
+
 struct expression_t
 {
     union
@@ -59,6 +66,7 @@ struct expression_t
         struct assignment_t    assignment;
         struct implicit_cast_t implicit_cast;
         struct conditional_t   conditional;
+        struct unary_t         unary;
     };
     expression_kind_t kind;
 };
@@ -162,6 +170,17 @@ expression_t conditional_new(expression_t lhs, conditional_kind_t op, expression
     return expression;
 }
 
+expression_t unary_new(unary_kind_t op, expression_t operand)
+{
+    expression_t expression = expression_new(EXPRESSION_UNARY);
+    unary_t unary = UNARY(expression);
+    unary->op = op;
+    unary->expression = operand;
+    unary->type = NULL;
+
+    return expression;
+}
+
 static
 void binary_free(binary_t binary)
 {
@@ -196,6 +215,14 @@ void conditional_free(conditional_t conditional)
     expression_free(conditional->rhs);
 }
 
+static
+void unary_free(unary_t unary)
+{
+    expression_free(unary->expression);
+    if (unary->type != NULL)
+        type_free(unary->type);
+}
+
 void expression_free(expression_t expression)
 {
     switch (expression->kind) // LCOV_EXCL_LINE
@@ -217,6 +244,9 @@ void expression_free(expression_t expression)
             break;
         case EXPRESSION_CONDITIONAL:
             conditional_free(CONDITIONAL(expression));
+            break;
+        case EXPRESSION_UNARY:
+            unary_free(UNARY(expression));
             break;
     }
 
@@ -348,6 +378,21 @@ conditional_kind_t conditional_op(conditional_t conditional)
     return conditional->op;
 }
 
+unary_kind_t unary_op(unary_t unary)
+{
+    return unary->op;
+}
+
+expression_t unary_expression(unary_t unary)
+{
+    return unary->expression;
+}
+
+void unary_set_expression(unary_t unary, expression_t expression)
+{
+    unary->expression = expression;
+}
+
 static
 type_t constant_type(constant_t constant)
 {
@@ -426,6 +471,27 @@ type_t conditional_type(conditional_t conditional)
     return type_bool();
 }
 
+static
+type_t unary_type(unary_t unary)
+{
+    type_t operand_type = expression_type(unary_expression(unary));
+    if (operand_type == NULL)
+        return NULL;
+
+    switch (unary_op(unary)) // LCOV_EXCL_LINE
+    {
+        case UNARY_ADDRESS_OF:
+            if (unary->type == NULL)
+                unary->type = type_pointer_new(type_clone(operand_type));
+            return unary->type;
+        case UNARY_DEREF:
+            if (type_kind(operand_type) != TYPE_POINTER)
+                return NULL;
+            return pointer_pointee(POINTER(operand_type));
+    }
+    __builtin_unreachable();
+}
+
 type_t expression_type(expression_t expression)
 {
     switch (expression_kind(expression)) // LCOV_EXCL_LINE
@@ -444,6 +510,8 @@ type_t expression_type(expression_t expression)
             return implicit_cast_type(IMPLICIT_CAST(expression));
         case EXPRESSION_CONDITIONAL:
             return conditional_type(CONDITIONAL(expression));
+        case EXPRESSION_UNARY:
+            return unary_type(UNARY(expression));
     }
     __builtin_unreachable();
 }
@@ -483,6 +551,11 @@ implicit_cast_t IMPLICIT_CAST(expression_t expression)
 conditional_t CONDITIONAL(expression_t expression)
 {
     return &expression->conditional;
+}
+
+unary_t UNARY(expression_t expression)
+{
+    return &expression->unary;
 }
 
 const char* binary_kind_string(binary_kind_t kind)

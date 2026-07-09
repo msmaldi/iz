@@ -1,0 +1,14 @@
+void swap_int(int* lhs, int* rhs)
+{
+    int tmp = *lhs;
+    *lhs = *rhs;
+    *rhs = tmp;
+}
+
+int main()
+{
+    int a = 2, b = 1;
+    swap_int(&a, &b);
+
+    return 0;
+}

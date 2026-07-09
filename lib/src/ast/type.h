@@ -9,16 +9,21 @@ enum type_kind_t
     TYPE_INT,
     TYPE_CALLABLE,
     TYPE_CHAR,
+    TYPE_VOID,
+    TYPE_POINTER,
 };
 
 type_t   type_bool();
 type_t   type_int();
 type_t   type_char();
+type_t   type_void();
 
 type_t   type_bool_new();
 type_t   type_int_new();
 type_t   type_char_new();
+type_t   type_void_new();
 type_t   type_callable_new(type_t return_type, array_t(type_t) param_s);
+type_t   type_pointer_new(type_t pointee);
 
 bool     type_eq(type_t lhs, type_t rhs);
 
@@ -31,6 +36,9 @@ type_kind_t type_kind(type_t type);
 type_t           callable_return_type(callable_t callable);
 array_t(type_t)  callable_param_s(callable_t callable);
 
+type_t     pointer_pointee(pointer_t pointer);
+
 callable_t CALLABLE(type_t type);
+pointer_t  POINTER(type_t type);
 
 #endif

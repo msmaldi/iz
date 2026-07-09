@@ -69,6 +69,17 @@ static void success_branch(void **arg)
 
         compilation_free(compilation);
     }
+
+    {
+        source_t code_v006 = source_load("../docs/samples/v0.0.6.iz");
+        unit_t unit = syntax_analysis(code_v006);
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_non_null(compilation);
+
+        compilation_print(compilation, stdout);
+
+        compilation_free(compilation);
+    }
 }
 
 static void failure_branch(void **arg)
@@ -315,6 +326,79 @@ static void failure_branch(void **arg)
         "    return not_a_function(1);" LF
         ;
         unit_t unit = syntax_analysis(source_inline(code, "sema_error018.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // Assigning to a non-lvalue expression.
+        char *code =
+        "int assign_bad()" LF
+        "    1 = 2;"       LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error019.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // & requires an lvalue operand.
+        char *code =
+        "int addr_bad(int n)" LF
+        "{"                   LF
+        "    &5;"             LF
+        "    return n;"       LF
+        "}"
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error020.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // * requires a pointer operand.
+        char *code =
+        "int deref_bad(int n)" LF
+        "    return *n;"       LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error021.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // Dereferencing an identifier that failed to resolve must not
+        // cascade a second ("not a pointer") diagnostic.
+        char *code =
+        "int deref_undeclared_bad()" LF
+        "    return *not_exist;"     LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error021b.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // A variable cannot be declared with type void.
+        char *code =
+        "int void_var_bad()" LF
+        "{"                  LF
+        "    void x;"        LF
+        "    return 1;"      LF
+        "}"
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error022.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // An argument cannot be declared with type void.
+        char *code =
+        "int void_arg_bad(void x)" LF
+        "    return 1;"            LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error023.iz"));
         compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
         assert_null(compilation);
     }

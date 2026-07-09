@@ -40,6 +40,7 @@ enum keyword_t
     KEYWORD_TRUE,
     KEYWORD_FALSE,
     KEYWORD_CHAR,
+    KEYWORD_VOID,
 };
 
 typedef char* cursor_t;
@@ -71,6 +72,7 @@ bool is_keyword_else(lexer_t lexer);
 bool is_keyword_true(lexer_t lexer);
 bool is_keyword_false(lexer_t lexer);
 bool is_keyword_char(lexer_t lexer);
+bool is_keyword_void(lexer_t lexer);
 
 bool is_identifier(lexer_t lexer);
 
@@ -81,6 +83,8 @@ bool is_close_paren(lexer_t lexer);
 bool is_open_brace(lexer_t lexer);
 bool is_close_brace(lexer_t lexer);
 bool is_eq(lexer_t lexer);
+bool is_star(lexer_t lexer);
+bool is_amp(lexer_t lexer);
 
 bool is_integer_literal(lexer_t lexer);
 bool is_char_literal(lexer_t lexer);

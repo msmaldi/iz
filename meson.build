@@ -1,7 +1,7 @@
 project(
     'iz',
     ['c', 'cpp'],
-    version: '0.0.5'
+    version: '0.0.6'
 )
 
 cmocka = dependency('cmocka')

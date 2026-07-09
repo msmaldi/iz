@@ -245,8 +245,12 @@ LLVMTypeRef codegen_type(codegen_t codegen, type_t type)
             return LLVMInt32TypeInContext(codegen->context);
         case TYPE_CHAR:
             return LLVMInt8TypeInContext(codegen->context);
+        case TYPE_VOID:
+            return LLVMVoidTypeInContext(codegen->context);
         case TYPE_CALLABLE:
             return codegen_callable(codegen, CALLABLE(type));
+        case TYPE_POINTER:
+            return LLVMPointerTypeInContext(codegen->context, 0);
     }
     return NULL; // LCOV_EXCL_LINE
 }
@@ -290,6 +294,29 @@ LLVMValueRef codegen_identifier(codegen_t codegen, identifier_t identifier)
     //LLVMTypeRef type = codegen_type(codegen, declaration_type(declaration));
 
     //return LLVMBuildLoad2(codegen->builder, type, alloca, "");
+}
+
+// Returns the address an lvalue expression designates: for an identifier,
+// its alloca; for a dereferenced pointer (*p), the (already loaded) pointer
+// value itself. Used both as an assignment target and for the & operator.
+LLVMValueRef codegen_lvalue_address(codegen_t codegen, expression_t lvalue)
+{
+    if (expression_kind(lvalue) == EXPRESSION_IDENTIFIER)
+        return map_get(codegen->values, identifier_declaration(IDENTIFIER(lvalue)));
+
+    return codegen_expression(codegen, unary_expression(UNARY(lvalue)));
+}
+
+LLVMValueRef codegen_unary(codegen_t codegen, unary_t unary)
+{
+    switch (unary_op(unary)) // LCOV_EXCL_LINE
+    {
+        case UNARY_ADDRESS_OF:
+            return codegen_lvalue_address(codegen, unary_expression(unary));
+        case UNARY_DEREF:
+            return codegen_expression(codegen, unary_expression(unary));
+    }
+    return NULL; // LCOV_EXCL_LINE
 }
 
 LLVMValueRef codegen_binary(codegen_t codegen, binary_t binary)
@@ -345,9 +372,7 @@ LLVMValueRef codegen_call(codegen_t codegen, call_t call)
 LLVMValueRef codegen_assignment(codegen_t codegen, assignment_t assignment)
 {
     expression_t lvalue = assignment_lvalue(assignment);
-    identifier_t identifier = IDENTIFIER(lvalue);
-
-    LLVMValueRef llvm_lvalue = map_get(codegen->values, identifier_declaration(identifier));
+    LLVMValueRef llvm_lvalue = codegen_lvalue_address(codegen, lvalue);
 
     expression_t rvalue = assignment_rvalue(assignment);
     LLVMValueRef llvm_rvalue = codegen_expression(codegen, rvalue);
@@ -418,6 +443,8 @@ LLVMValueRef codegen_expression(codegen_t codegen, expression_t expression)
             return codegen_implicit_cast(codegen, IMPLICIT_CAST(expression));
         case EXPRESSION_CONDITIONAL:
             return codegen_conditional(codegen, CONDITIONAL(expression));
+        case EXPRESSION_UNARY:
+            return codegen_unary(codegen, UNARY(expression));
     }
     return NULL; // LCOV_EXCL_LINE
 }
@@ -623,6 +650,12 @@ void codegen_function(codegen_t codegen, function_t function)
 
     statement_t statement = function_statement(function);
     codegen_statement(codegen, statement);
+
+    // A void function's body never contains a return statement (sema only
+    // requires "all paths return" for non-void functions), so it always
+    // falls off the end and needs a synthetic terminator here.
+    if (type_kind(function_return_type(function)) == TYPE_VOID)
+        LLVMBuildRetVoid(codegen->builder);
 
     codegen->function = NULL;
 }

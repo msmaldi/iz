@@ -89,6 +89,9 @@ void call_print(call_t call, FILE* out, int tab);
 static
 void assignment_print(assignment_t assignment, FILE* out, int tab);
 
+static
+void unary_print(unary_t unary, FILE* out, int tab);
+
 void compilation_print(compilation_t compilation, FILE* out)
 {
     array_t(unit_t) unit_s = compilation_unit_s(compilation);
@@ -216,8 +219,15 @@ void type_print(type_t type, FILE* out)
         case TYPE_CHAR:
             fprintf(out, CYAN "char" RESET);
             break;
+        case TYPE_VOID:
+            fprintf(out, CYAN "void" RESET);
+            break;
         case TYPE_CALLABLE:
             callable_print(CALLABLE(type), out);
+            break;
+        case TYPE_POINTER:
+            type_print(pointer_pointee(POINTER(type)), out);
+            fprintf(out, CYAN "*" RESET);
             break;
     }
 }
@@ -375,6 +385,9 @@ void expression_print(expression_t expression, FILE* out, int tab)
         case EXPRESSION_ASSIGNMENT:
             assignment_print(ASSIGNMENT(expression), out, tab);
             break;
+        case EXPRESSION_UNARY:
+            unary_print(UNARY(expression), out, tab);
+            break;
     }
 }
 
@@ -485,4 +498,16 @@ void assignment_print(assignment_t assignment, FILE* out, int tab)
 
     expression_print(assignment_lvalue(assignment), out, tab + 1);
     expression_print(assignment_rvalue(assignment), out, tab + 1);
+}
+
+static
+void unary_print(unary_t unary, FILE* out, int tab)
+{
+    tab_print(tab, out);
+
+    const char *unary_kind_str = unary_op(unary) == UNARY_ADDRESS_OF ? "&" : "*";
+    const char *format = BOLDGREEN "%s" BOLDYELLOW " %p" WHITE " '" BLUE "%s" WHITE "'" "\n" RESET;
+    fprintf(out, format, "unary_t", unary, unary_kind_str);
+
+    expression_print(unary_expression(unary), out, tab + 1);
 }

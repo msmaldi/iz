@@ -115,14 +115,27 @@ void resolve_identifier(sema_t sema, identifier_t identifier)
     identifier_set_declaration(identifier, declaration);
 }
 
-// Inserts the lvalue-to-rvalue cast an identifier needs to be read as a
-// value. This does not check types: callers must validate compatibility
-// themselves (see check_type()) before relying on the result.
+// An identifier always designates storage (its alloca); a dereferenced
+// pointer (*p) designates the storage p points to. Both are lvalues that
+// need an explicit load (see implicit_cast()) to be read as a value.
+static
+bool is_lvalue(expression_t expression)
+{
+    if (expression_kind(expression) == EXPRESSION_IDENTIFIER)
+        return true;
+
+    return expression_kind(expression) == EXPRESSION_UNARY
+        && unary_op(UNARY(expression)) == UNARY_DEREF;
+}
+
+// Inserts the lvalue-to-rvalue cast an lvalue needs to be read as a value.
+// This does not check types: callers must validate compatibility themselves
+// (see check_type()) before relying on the result.
 expression_t implicit_cast(sema_t sema, expression_t expression)
 {
     (void) sema;
 
-    if (expression_kind(expression) == EXPRESSION_IDENTIFIER)
+    if (is_lvalue(expression))
         return implicit_cast_new(IMPLICIT_CAST_LVALUE_TO_RVALUE, expression);
 
     return expression;
@@ -232,6 +245,12 @@ void assignment_analysis(sema_t sema, assignment_t assignment)
     expression_analysis(sema, lhs);
     type_t type_lhs = expression_type(lhs);
 
+    if (!is_lvalue(lhs))
+    {
+        display_error(expression_location(sema, lhs), "expression is not assignable");
+        sema->errors++;
+    }
+
     expression_t rhs = assignment_rvalue(assignment);
     expression_analysis(sema, rhs);
     type_t type_rhs = expression_type(rhs);
@@ -255,6 +274,36 @@ void condition_analysis(sema_t sema, conditional_t conditional)
     type_t type_rhs = expression_type(rhs);
     check_type(sema, expression_location(sema, rhs), type_bool(), type_rhs, "incompatible type");
     conditional_set_rhs(conditional, implicit_cast(sema, rhs));
+}
+
+static
+void unary_analysis(sema_t sema, unary_t unary)
+{
+    expression_t operand = unary_expression(unary);
+    expression_analysis(sema, operand);
+
+    switch (unary_op(unary)) // LCOV_EXCL_LINE
+    {
+        case UNARY_ADDRESS_OF:
+            if (!is_lvalue(operand))
+            {
+                display_error(expression_location(sema, operand), "cannot take address of non-lvalue expression");
+                sema->errors++;
+            }
+            break;
+        case UNARY_DEREF:
+        {
+            type_t operand_type = expression_type(operand);
+            if (operand_type != NULL && type_kind(operand_type) != TYPE_POINTER)
+            {
+                display_error(expression_location(sema, operand), "cannot dereference non-pointer type");
+                sema->errors++;
+            }
+
+            unary_set_expression(unary, implicit_cast(sema, operand));
+            break;
+        }
+    }
 }
 
 void expression_analysis(sema_t sema, expression_t expression)
@@ -281,6 +330,9 @@ void expression_analysis(sema_t sema, expression_t expression)
             break; // LCOV_EXCL_LINE
         case EXPRESSION_CONDITIONAL:
             condition_analysis(sema, CONDITIONAL(expression));
+            break;
+        case EXPRESSION_UNARY:
+            unary_analysis(sema, UNARY(expression));
             break;
     }
 }
@@ -349,6 +401,13 @@ void var_analysis(sema_t sema, var_t var)
         declaration_t declaration = declaration_s[i];
 
         variable_t variable = VARIABLE(declaration);
+
+        if (type_eq(variable_type(variable), type_void()))
+        {
+            display_error(declaration_name(declaration), "variable declared with type void");
+            sema->errors++;
+        }
+
         expression_t initializer = variable_initializer(variable);
         if (initializer != NULL)
         {
@@ -412,6 +471,13 @@ void map_argument_s(sema_t sema, array_t(declaration_t) argument_s)
     for (size_t i = 0; i < size; i++)
     {
         declaration_t argument = argument_s[i];
+
+        if (type_eq(declaration_type(argument), type_void()))
+        {
+            display_error(declaration_name(argument), "argument declared with type void");
+            sema->errors++;
+        }
+
         if (!scope_add(sema->scope, argument))
         {
             display_error(declaration_name(argument), "redefinition of");
@@ -432,7 +498,8 @@ void function_analysis(sema_t sema, function_t function)
     statement_t statement = function_statement(function);
     statement_analysis(sema, statement);
 
-    if (!statement_all_path_return_value(statement))
+    bool is_void = type_eq(function_return_type(function), type_void());
+    if (!is_void && !statement_all_path_return_value(statement))
     {
         display_error(function_name(function), "missing return statement");
         sema->errors++;

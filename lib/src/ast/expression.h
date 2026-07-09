@@ -11,7 +11,8 @@ enum expression_kind_t
     EXPRESSION_CALL,
     EXPRESSION_ASSIGNMENT,
     EXPRESSION_IMPLICIT_CAST,
-    EXPRESSION_CONDITIONAL
+    EXPRESSION_CONDITIONAL,
+    EXPRESSION_UNARY,
 };
 
 enum constant_kind_t
@@ -50,6 +51,12 @@ enum conditional_kind_t
     CONDITIONAL_OR
 };
 
+enum unary_kind_t
+{
+    UNARY_ADDRESS_OF,
+    UNARY_DEREF,
+};
+
 expression_t     constant_bool_new(bool _bool);
 expression_t     constant_u64_new(uint64_t u64);
 expression_t     constant_char_new(char _char);
@@ -59,6 +66,7 @@ expression_t     call_new(expression_t callee, array_t(expression_t) argument_s)
 expression_t     assignment_new(expression_t lvalue, expression_t rvalue);
 expression_t     implicit_cast_new(implicit_cast_kind_t kind, expression_t expression);
 expression_t     conditional_new(expression_t lhs, conditional_kind_t op, expression_t rhs);
+expression_t     unary_new(unary_kind_t op, expression_t expression);
 void             expression_free(expression_t expression);
 
 expression_kind_t expression_kind(expression_t expression);
@@ -97,6 +105,10 @@ expression_t   conditional_rhs(conditional_t conditional);
 void           conditional_set_rhs(conditional_t conditional, expression_t rhs);
 conditional_kind_t conditional_op(conditional_t conditional);
 
+unary_kind_t   unary_op(unary_t unary);
+expression_t   unary_expression(unary_t unary);
+void           unary_set_expression(unary_t unary, expression_t expression);
+
 constant_t      CONSTANT(expression_t expression);
 identifier_t    IDENTIFIER(expression_t expression);
 binary_t        BINARY(expression_t expression);
@@ -104,6 +116,7 @@ call_t          CALL(expression_t expression);
 assignment_t    ASSIGNMENT(expression_t expression);
 implicit_cast_t IMPLICIT_CAST(expression_t expression);
 conditional_t   CONDITIONAL(expression_t expression);
+unary_t         UNARY(expression_t expression);
 
 const char* binary_kind_string(binary_kind_t kind);
 

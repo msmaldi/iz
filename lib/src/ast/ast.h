@@ -15,6 +15,7 @@ typedef  struct unit_t*                unit_t;
 typedef  enum   type_kind_t            type_kind_t;
 typedef  struct type_t*                type_t;
 typedef  struct callable_t*            callable_t;
+typedef  struct pointer_t*             pointer_t;
 
 typedef  enum   declaration_kind_t     declaration_kind_t;
 typedef  struct declaration_t*         declaration_t;
@@ -52,6 +53,9 @@ typedef  struct implicit_cast_t*       implicit_cast_t;
 
 typedef  enum   conditional_kind_t     conditional_kind_t;
 typedef  struct conditional_t*         conditional_t;
+
+typedef  enum   unary_kind_t           unary_kind_t;
+typedef  struct unary_t*               unary_t;
 
 
 #include "ast/expression.h"

@@ -29,6 +29,16 @@ static void test_data(void **arg)
         assert_true(is_keyword_true(SOURCE_LEXER_ALLOC("true")));
         assert_true(is_keyword_false(SOURCE_LEXER_ALLOC("false")));
         assert_true(is_keyword_char(SOURCE_LEXER_ALLOC("char")));
+        assert_true(is_keyword_void(SOURCE_LEXER_ALLOC("void")));
+    }
+
+    {
+        assert_true(is_star(SOURCE_LEXER_ALLOC("*")));
+        assert_false(is_star(SOURCE_LEXER_ALLOC("")));
+
+        assert_true(is_amp(SOURCE_LEXER_ALLOC("&")));
+        assert_false(is_amp(SOURCE_LEXER_ALLOC("")));
+        assert_false(is_amp(SOURCE_LEXER_ALLOC("&&"))); // must not consume '&' of '&&'
     }
 
     {

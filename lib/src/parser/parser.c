@@ -341,16 +341,24 @@ type_t parse_type(parser_t parser)
 {
     lexer_t lex = lexer(parser);
 
+    type_t type = NULL;
+
     if (is_keyword_bool(lex))
-        return type_bool_new();
+        type = type_bool_new();
+    else if (is_keyword_int(lex))
+        type = type_int_new();
+    else if (is_keyword_char(lex))
+        type = type_char_new();
+    else if (is_keyword_void(lex))
+        type = type_void_new();
 
-    if (is_keyword_int(lex))
-        return type_int_new();
+    if (type == NULL)
+        return NULL;
 
-    if (is_keyword_char(lex))
-        return type_char_new();
+    while (is_star(lex))
+        type = type_pointer_new(type);
 
-    return NULL;
+    return type;
 }
 
 array_t(expression_t) scan_expression_s(parser_t parser)
@@ -441,12 +449,6 @@ expression_t suffix(parser_t parser, expression_t expression)
         return suffix(parser, expression);
     }
 
-    if (is_eq(lex))
-    {
-        expression = finish_assignment(parser, expression);
-        return suffix(parser, expression);
-    }
-
     return expression;
 }
 
@@ -477,9 +479,32 @@ expression_t parse_primary(parser_t parser)
     return NULL;
 }
 
+expression_t parse_unary(parser_t parser)
+{
+    lexer_t lex = lexer(parser);
+
+    if (is_star(lex))
+    {
+        expression_t operand = parse_unary(parser);
+        if (operand == NULL)
+            return NULL;
+        return unary_new(UNARY_DEREF, operand);
+    }
+
+    if (is_amp(lex))
+    {
+        expression_t operand = parse_unary(parser);
+        if (operand == NULL)
+            return NULL;
+        return unary_new(UNARY_ADDRESS_OF, operand);
+    }
+
+    return parse_primary(parser);
+}
+
 expression_t scan_multiplicative(parser_t parser)
 {
-    expression_t lhs = parse_primary(parser);
+    expression_t lhs = parse_unary(parser);
     while (true)
     {
         token_kind_t token_kind = match_multiplicative(lexer(parser));
@@ -487,21 +512,21 @@ expression_t scan_multiplicative(parser_t parser)
         {
             case TOKEN_STAR:
             {
-                expression_t rhs = parse_primary(parser);
+                expression_t rhs = parse_unary(parser);
                 if (rhs == NULL) { expression_free(lhs); return NULL; }
                 lhs = binary_new(lhs, BINARY_MUL, rhs);
                 break;
             }
             case TOKEN_SLASH:
             {
-                expression_t rhs = parse_primary(parser);
+                expression_t rhs = parse_unary(parser);
                 if (rhs == NULL) { expression_free(lhs); return NULL; }
                 lhs = binary_new(lhs, BINARY_DIV, rhs);
                 break;
             }
             case TOKEN_PERCENT:
             {
-                expression_t rhs = parse_primary(parser);
+                expression_t rhs = parse_unary(parser);
                 if (rhs == NULL) { expression_free(lhs); return NULL; }
                 lhs = binary_new(lhs, BINARY_REM, rhs);
                 break;
@@ -640,7 +665,14 @@ expression_t scan_conditional(parser_t parser)
 
 expression_t parse_expression(parser_t parser)
 {
-    return scan_conditional(parser);
+    expression_t lhs = scan_conditional(parser);
+    if (lhs == NULL)
+        return NULL;
+
+    if (is_eq(lexer(parser)))
+        return finish_assignment(parser, lhs);
+
+    return lhs;
 }
 
 #define RESET       "\033[0m"

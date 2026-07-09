@@ -53,6 +53,38 @@ static void success_branch(void **arg)
 
         unit_free(unit);
     }
+
+    {
+        source_t code_v006 = source_load("../docs/samples/v0.0.6.iz");
+
+        unit_t unit = syntax_analysis(code_v006);
+
+        unit_free(unit);
+    }
+
+    {
+        // C#-style pointer declarators: in "T* a, b;" the '*' belongs to the
+        // shared type, so ALL declarators are pointers - unlike C, where
+        // only 'a' would be a pointer and 'b' a plain T.
+        char *code =
+        "int f()"        LF
+        "    int* a, b;" LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "ptr_decl.iz"));
+        assert_non_null(unit);
+
+        declaration_t declaration = unit_declaration_s(unit)[0];
+        statement_t statement = function_statement(FUNCTION(declaration));
+        assert_int_equal(STATEMENT_VAR, statement_kind(statement));
+
+        array_t(declaration_t) variable_s = var_variable_s(VAR(statement));
+        assert_int_equal(2, array_size(variable_s));
+
+        assert_int_equal(TYPE_POINTER, type_kind(variable_type(VARIABLE(variable_s[0]))));
+        assert_int_equal(TYPE_POINTER, type_kind(variable_type(VARIABLE(variable_s[1]))));
+
+        unit_free(unit);
+    }
 }
 
 static void failure_branch(void **arg)
@@ -390,6 +422,29 @@ static void failure_branch(void **arg)
     {
         char *code = "int one() return 1 || #;";
         unit_t unit = syntax_analysis(source_inline(code, "error038.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return *#;";
+        unit_t unit = syntax_analysis(source_inline(code, "error039.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return &#;";
+        unit_t unit = syntax_analysis(source_inline(code, "error040.iz"));
+        assert_null(unit);
+    }
+
+    {
+        // C-style per-declarator '*' (e.g. "int a, *b;") is rejected: this
+        // language only supports the C#-style "T* a, b;" (see success_branch).
+        char *code =
+        "int f()"        LF
+        "    int a, *b;" LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "error041.iz"));
         assert_null(unit);
     }
 

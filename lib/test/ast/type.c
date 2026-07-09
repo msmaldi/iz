@@ -14,6 +14,7 @@ static void test_data(void **arg)
         assert_int_equal(TYPE_BOOL, type_kind(type_bool()));
         assert_int_equal(TYPE_INT, type_kind(type_int()));
         assert_int_equal(TYPE_CHAR, type_kind(type_char()));
+        assert_int_equal(TYPE_VOID, type_kind(type_void()));
     }
 
     {
@@ -41,6 +42,14 @@ static void test_data(void **arg)
     }
 
     {
+        type_t void_ty = type_void_new();
+
+        assert_int_equal(type_kind(void_ty), TYPE_VOID);
+
+        type_free(void_ty);
+    }
+
+    {
         type_t int_ty = type_int_new();
         array_t(type_t) param_s = array_empty();
 
@@ -52,11 +61,34 @@ static void test_data(void **arg)
     }
 
     {
+        type_t int_ty = type_int_new();
+        type_t pointer_ty = type_pointer_new(int_ty);
+
+        assert_int_equal(type_kind(pointer_ty), TYPE_POINTER);
+        assert_int_equal(pointer_pointee(POINTER(pointer_ty)), int_ty);
+
+        type_free(pointer_ty);
+    }
+
+    {
         assert_false(type_eq(type_bool(), type_int()));
         assert_false(type_eq(NULL, type_int()));
         assert_false(type_eq(type_bool(), NULL));
         assert_false(type_eq(type_char(), type_int()));
         assert_true(type_eq(type_char(), type_char()));
+    }
+
+    {
+        type_t int_ptr = type_pointer_new(type_int_new());
+        type_t bool_ptr = type_pointer_new(type_bool_new());
+        type_t another_int_ptr = type_pointer_new(type_int_new());
+
+        assert_false(type_eq(int_ptr, bool_ptr));
+        assert_true(type_eq(int_ptr, another_int_ptr));
+
+        type_free(int_ptr);
+        type_free(bool_ptr);
+        type_free(another_int_ptr);
     }
 
     {
@@ -89,6 +121,29 @@ static void test_data(void **arg)
         assert_true(type_eq(char_ty, cloned));
 
         type_free(char_ty);
+        type_free(cloned);
+    }
+
+    {
+        type_t void_ty = type_void_new();
+        type_t cloned = type_clone(void_ty);
+
+        assert_int_equal(type_kind(cloned), TYPE_VOID);
+        assert_true(type_eq(void_ty, cloned));
+
+        type_free(void_ty);
+        type_free(cloned);
+    }
+
+    {
+        type_t pointer_ty = type_pointer_new(type_int_new());
+        type_t cloned = type_clone(pointer_ty);
+
+        assert_int_equal(type_kind(cloned), TYPE_POINTER);
+        assert_true(type_eq(pointer_ty, cloned));
+        assert_int_not_equal(pointer_pointee(POINTER(pointer_ty)), pointer_pointee(POINTER(cloned)));
+
+        type_free(pointer_ty);
         type_free(cloned);
     }
 

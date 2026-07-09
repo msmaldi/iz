@@ -156,6 +156,90 @@ static void test_data(void **arg)
     }
 
     {
+        // & on an identifier: address-of yields a pointer to the operand's
+        // type. Call expression_type() twice to exercise both the "compute
+        // and memoize" and the "return cached" branches.
+        type_t int_ty = type_int_new();
+        declaration_t declaration = argument_new(int_ty, (struct location_t){ .span = span_sz("n") });
+
+        span_t name = span_sz("n");
+        struct location_t location = { .span = name, .line = 0, .column = 0 };
+        expression_t n_expr = identifier_new(location);
+        identifier_set_declaration(IDENTIFIER(n_expr), declaration);
+
+        expression_t address_of = unary_new(UNARY_ADDRESS_OF, n_expr);
+        assert_int_equal(EXPRESSION_UNARY, expression_kind(address_of));
+
+        unary_t unary = UNARY(address_of);
+        assert_non_null(unary);
+        assert_int_equal(UNARY_ADDRESS_OF, unary_op(unary));
+        assert_int_equal(n_expr, unary_expression(unary));
+
+        type_t type_first = expression_type(address_of);
+        type_t type_second = expression_type(address_of);
+        assert_int_equal(type_first, type_second); // memoized, same pointer both times
+        assert_int_equal(TYPE_POINTER, type_kind(type_first));
+        assert_int_equal(TYPE_INT, type_kind(pointer_pointee(POINTER(type_first))));
+
+        expression_free(address_of);
+        declaration_free(declaration);
+        type_free(int_ty); // argument_free() does not release the argument's type
+    }
+
+    {
+        // & on an expression whose type could not be resolved (e.g. an
+        // identifier that failed to resolve) must not crash, just report no type.
+        span_t name = span_sz("not_exist");
+        struct location_t location = { .span = name, .line = 0, .column = 0 };
+        expression_t unresolved = identifier_new(location);
+
+        expression_t address_of = unary_new(UNARY_ADDRESS_OF, unresolved);
+        assert_null(expression_type(address_of));
+
+        expression_free(address_of);
+    }
+
+    {
+        // * on a pointer: dereference yields the pointee's type.
+        type_t pointer_ty = type_pointer_new(type_int_new());
+        declaration_t declaration = argument_new(pointer_ty, (struct location_t){ .span = span_sz("p") });
+
+        span_t name = span_sz("p");
+        struct location_t location = { .span = name, .line = 0, .column = 0 };
+        expression_t p_expr = identifier_new(location);
+        identifier_set_declaration(IDENTIFIER(p_expr), declaration);
+
+        expression_t deref = unary_new(UNARY_DEREF, p_expr);
+        assert_int_equal(UNARY_DEREF, unary_op(UNARY(deref)));
+
+        type_t type_actual = expression_type(deref);
+        assert_int_equal(TYPE_INT, type_kind(type_actual));
+
+        expression_free(deref);
+        declaration_free(declaration);
+        type_free(pointer_ty); // argument_free() does not release the argument's type
+    }
+
+    {
+        // * on a non-pointer: dereference has no type.
+        uint64_t one = 1;
+        expression_t constant = constant_u64_new(one);
+
+        expression_t deref = unary_new(UNARY_DEREF, constant);
+        assert_null(expression_type(deref));
+
+        // exercise unary_set_expression() (e.g. sema swaps the operand for
+        // its lvalue-to-rvalue-cast version)
+        uint64_t two = 2;
+        expression_t replacement = constant_u64_new(two);
+        expression_free(constant);
+        unary_set_expression(UNARY(deref), replacement);
+        assert_int_equal(replacement, unary_expression(UNARY(deref)));
+
+        expression_free(deref);
+    }
+
+    {
         assert_string_equal("+", binary_kind_string(BINARY_ADD));
         assert_string_equal("-", binary_kind_string(BINARY_SUB));
         assert_string_equal("*", binary_kind_string(BINARY_MUL));

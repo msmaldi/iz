@@ -27,3 +27,10 @@ types: int, callable(a function type), bool
 expressions: constant(int), identifier, binary, call, implicit_cast, assignment, conditional
 statement: return(with value), block, if, var(declare variable), act(like function call ou assign variable)
 declaration: function, argument, variable
+
+Versão 0.0.5 implementa:
+
+types: int, callable(a function type), bool, char
+expressions: constant(int, bool, char), identifier, binary, call, implicit_cast, assignment, conditional
+statement: return(with value), block, if, var(declare variable), act(like function call ou assign variable)
+declaration: function, argument, variable

@@ -18,6 +18,7 @@ enum constant_kind_t
 {
     CONSTANT_BOOL,
     CONSTANT_U64,
+    CONSTANT_CHAR,
 };
 
 enum binary_kind_t
@@ -51,6 +52,7 @@ enum conditional_kind_t
 
 expression_t     constant_bool_new(bool _bool);
 expression_t     constant_u64_new(uint64_t u64);
+expression_t     constant_char_new(char _char);
 expression_t     identifier_new(struct location_t location);
 expression_t     binary_new(expression_t lhs, binary_kind_t op, expression_t rhs);
 expression_t     call_new(expression_t callee, array_t(expression_t) argument_s);
@@ -65,6 +67,7 @@ type_t            expression_type(expression_t expression);
 constant_kind_t  constant_kind(constant_t constant);
 uint64_t         constant_u64(constant_t constant);
 bool             constant_bool(constant_t constant);
+char             constant_char(constant_t constant);
 
 span_t         identifier_name(identifier_t identifier);
 declaration_t  identifier_declaration(identifier_t identifier);

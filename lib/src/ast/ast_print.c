@@ -213,6 +213,9 @@ void type_print(type_t type, FILE* out)
         case TYPE_BOOL:
             fprintf(out, CYAN "bool" RESET);
             break;
+        case TYPE_CHAR:
+            fprintf(out, CYAN "char" RESET);
+            break;
         case TYPE_CALLABLE:
             callable_print(CALLABLE(type), out);
             break;
@@ -390,6 +393,9 @@ void constant_print(constant_t constant, FILE* out, int tab)
         }
         case CONSTANT_U64:
             fprintf(out, BOLDGREEN "constant_t" BOLDYELLOW " %p" RESET " %zu\n" RESET, constant, constant_u64(constant));
+            break;
+        case CONSTANT_CHAR:
+            fprintf(out, BOLDGREEN "constant_t" BOLDYELLOW " %p" RESET " '%c'\n" RESET, constant, constant_char(constant));
             break;
     }
 }

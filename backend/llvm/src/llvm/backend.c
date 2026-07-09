@@ -243,6 +243,8 @@ LLVMTypeRef codegen_type(codegen_t codegen, type_t type)
             return LLVMInt1TypeInContext(codegen->context);
         case TYPE_INT:
             return LLVMInt32TypeInContext(codegen->context);
+        case TYPE_CHAR:
+            return LLVMInt8TypeInContext(codegen->context);
         case TYPE_CALLABLE:
             return codegen_callable(codegen, CALLABLE(type));
     }
@@ -265,6 +267,11 @@ LLVMValueRef codegen_constant(codegen_t codegen, constant_t constant)
         {
             u_int64_t u64 = constant_u64(constant);
             return LLVMConstInt(LLVMInt32TypeInContext(codegen->context), u64, 0);
+        }
+        case CONSTANT_CHAR:
+        {
+            char _char = constant_char(constant);
+            return LLVMConstInt(LLVMInt8TypeInContext(codegen->context), (unsigned char)_char, 0);
         }
     }
     return NULL; // LCOV_EXCL_LINE

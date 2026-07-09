@@ -28,6 +28,12 @@ type_t type_int()
     return &struct_type_int;
 }
 
+struct type_t struct_type_char = { .kind = TYPE_CHAR };
+type_t type_char()
+{
+    return &struct_type_char;
+}
+
 static
 type_t type_new(type_kind_t kind)
 {
@@ -48,6 +54,13 @@ type_t type_bool_new()
 type_t type_int_new()
 {
     type_t type = type_new(TYPE_INT);
+
+    return type;
+}
+
+type_t type_char_new()
+{
+    type_t type = type_new(TYPE_CHAR);
 
     return type;
 }
@@ -75,6 +88,7 @@ void type_free(type_t type)
     {
         case TYPE_BOOL:
         case TYPE_INT:
+        case TYPE_CHAR:
             break;
         case TYPE_CALLABLE:
             callable_free(CALLABLE(type));
@@ -104,6 +118,8 @@ type_t type_clone(type_t type)
             return type_bool_new();
         case TYPE_INT:
             return type_int_new();
+        case TYPE_CHAR:
+            return type_char_new();
         case TYPE_CALLABLE:
             return callable_clone(CALLABLE(type));
     }

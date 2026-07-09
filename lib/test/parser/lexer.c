@@ -28,6 +28,7 @@ static void test_data(void **arg)
         assert_true(is_keyword_else(SOURCE_LEXER_ALLOC("else")));
         assert_true(is_keyword_true(SOURCE_LEXER_ALLOC("true")));
         assert_true(is_keyword_false(SOURCE_LEXER_ALLOC("false")));
+        assert_true(is_keyword_char(SOURCE_LEXER_ALLOC("char")));
     }
 
     {
@@ -70,6 +71,20 @@ static void test_data(void **arg)
         assert_true(is_integer_literal(lexer));
         assert_int_equal(code, lexer->span.data);
         assert_int_equal(strlen(code), lexer->span.size);
+    }
+
+    {
+        assert_false(is_char_literal(SOURCE_LEXER_ALLOC("")));
+        assert_false(is_char_literal(SOURCE_LEXER_ALLOC("''")));   // empty literal
+        assert_false(is_char_literal(SOURCE_LEXER_ALLOC("'ab'"))); // more than one char
+        assert_false(is_char_literal(SOURCE_LEXER_ALLOC("'")));    // unterminated, EOF right after quote
+
+        char *code = "'0'";
+        lexer_t lexer = SOURCE_LEXER_ALLOC(code);
+        assert_true(is_char_literal(lexer));
+        assert_int_equal('0', lexer->char_value);
+        assert_int_equal(code, lexer->span.data);
+        assert_int_equal(3, lexer->span.size);
     }
 
     {

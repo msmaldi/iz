@@ -25,6 +25,21 @@ static void test_data(void **arg)
     }
 
     {
+        expression_t expression = constant_char_new('0');
+        assert_int_equal(EXPRESSION_CONSTANT, expression_kind(expression));
+
+        constant_t constant = CONSTANT(expression);
+        assert_non_null(constant);
+        assert_int_equal(constant_kind(constant), CONSTANT_CHAR);
+        assert_int_equal(constant_char(constant), '0');
+
+        type_t type_actual = expression_type(expression);
+        assert_int_equal(type_char(), type_actual);
+
+        expression_free(expression);
+    }
+
+    {
         span_t name = span_sz("n");
         struct location_t location = { .span = name, .line = 0, .column = 0 };
         expression_t expression = identifier_new(location);

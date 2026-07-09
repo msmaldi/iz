@@ -2,8 +2,8 @@
 
 #include <ctype.h>
 
-#define keywords_len 7
-const char *keywords[keywords_len] = { "bool", "int", "return", "if", "else", "true", "false" };
+#define keywords_len 8
+const char *keywords[keywords_len] = { "bool", "int", "return", "if", "else", "true", "false", "char" };
 
 struct lexer_t lexer_ctor(source_t source)
 {
@@ -119,6 +119,11 @@ bool is_keyword_false(lexer_t lexer)
     return is_keyword(lexer, KEYWORD_FALSE);
 }
 
+bool is_keyword_char(lexer_t lexer)
+{
+    return is_keyword(lexer, KEYWORD_CHAR);
+}
+
 bool is_identifier(lexer_t lexer)
 {
     lexer->span.data = NULL;
@@ -223,6 +228,24 @@ bool is_integer_literal(lexer_t lexer)
     lexer->span.size = size;
 
     advance(lexer, size);
+    return true;
+}
+
+bool is_char_literal(lexer_t lexer)
+{
+    if (skip_whitespaces(lexer) != '\'')
+        return false;
+
+    char *data = lexer->cursor;
+
+    if (data[1] == '\'' || data[1] == '\0' || data[2] != '\'')
+        return false;
+
+    lexer->char_value = data[1];
+    lexer->span.data = data;
+    lexer->span.size = 3;
+
+    advance(lexer, 3);
     return true;
 }
 

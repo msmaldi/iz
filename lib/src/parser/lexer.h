@@ -39,6 +39,7 @@ enum keyword_t
     KEYWORD_ELSE,
     KEYWORD_TRUE,
     KEYWORD_FALSE,
+    KEYWORD_CHAR,
 };
 
 typedef char* cursor_t;
@@ -54,6 +55,7 @@ struct lexer_t
     int        column;
     struct location_t location;
     span_t     span;
+    char       char_value;
 };
 
 struct lexer_t lexer_ctor(source_t source);
@@ -68,6 +70,7 @@ bool is_keyword_if(lexer_t lexer);
 bool is_keyword_else(lexer_t lexer);
 bool is_keyword_true(lexer_t lexer);
 bool is_keyword_false(lexer_t lexer);
+bool is_keyword_char(lexer_t lexer);
 
 bool is_identifier(lexer_t lexer);
 
@@ -80,6 +83,7 @@ bool is_close_brace(lexer_t lexer);
 bool is_eq(lexer_t lexer);
 
 bool is_integer_literal(lexer_t lexer);
+bool is_char_literal(lexer_t lexer);
 
 token_kind_t match_assignment(lexer_t lexer);
 token_kind_t match_equality(lexer_t lexer);

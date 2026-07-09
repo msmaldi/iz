@@ -7,6 +7,7 @@ struct constant_t
     {
         uint64_t u64;
         bool _bool;
+        char _char;
     };
     constant_kind_t kind;
 };
@@ -88,6 +89,17 @@ expression_t constant_u64_new(uint64_t u64)
     constant_t constant = CONSTANT(expression);
     constant->kind = CONSTANT_U64;
     constant->u64 = u64;
+
+    return expression;
+}
+
+expression_t constant_char_new(char _char)
+{
+    expression_t expression = expression_new(EXPRESSION_CONSTANT);
+
+    constant_t constant = CONSTANT(expression);
+    constant->kind = CONSTANT_CHAR;
+    constant->_char = _char;
 
     return expression;
 }
@@ -231,6 +243,11 @@ bool constant_bool(constant_t constant)
     return constant->_bool;
 }
 
+char constant_char(constant_t constant)
+{
+    return constant->_char;
+}
+
 span_t identifier_name(identifier_t identifier)
 {
     return location_span(&identifier->location);
@@ -340,6 +357,8 @@ type_t constant_type(constant_t constant)
             return type_bool();
         case CONSTANT_U64:
             return type_int();
+        case CONSTANT_CHAR:
+            return type_char();
     }
     __builtin_unreachable();
 }

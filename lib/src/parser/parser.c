@@ -347,6 +347,9 @@ type_t parse_type(parser_t parser)
     if (is_keyword_int(lex))
         return type_int_new();
 
+    if (is_keyword_char(lex))
+        return type_char_new();
+
     return NULL;
 }
 
@@ -385,6 +388,9 @@ expression_t scan_constant(parser_t parser)
         uint64_t u64 = strtoull(lex->span.data, &end, 10);
         return constant_u64_new(u64);
     }
+
+    if (is_char_literal(lex))
+        return constant_char_new(lex->char_value);
 
     return NULL;
 }

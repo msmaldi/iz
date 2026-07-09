@@ -83,6 +83,22 @@ static void success_branch(void **arg)
     }
 
     {
+        source_t code_v005 = source_load("../docs/samples/v0.0.5.iz");
+        unit_t unit = syntax_analysis(code_v005);
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        backend_t backend = backend_codegen(compilation);
+        assert_non_null(backend);
+
+        assert_true(backend_validate(backend));
+        backend_dump(backend);
+        backend_emit_object(backend);
+        backend_emit_assembly(backend);
+        backend_emit_llvm(backend);
+
+        backend_free(backend);
+    }
+
+    {
         char *code =
         "int choose(int n)"     LF
         "{"                     LF

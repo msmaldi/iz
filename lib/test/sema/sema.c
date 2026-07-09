@@ -58,6 +58,17 @@ static void success_branch(void **arg)
 
         compilation_free(compilation);
     }
+
+    {
+        source_t code_v005 = source_load("../docs/samples/v0.0.5.iz");
+        unit_t unit = syntax_analysis(code_v005);
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_non_null(compilation);
+
+        compilation_print(compilation, stdout);
+
+        compilation_free(compilation);
+    }
 }
 
 static void failure_branch(void **arg)

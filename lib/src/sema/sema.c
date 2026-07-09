@@ -170,6 +170,7 @@ void constant_analysis(sema_t sema, constant_t constant)
     {
         case CONSTANT_BOOL:
         case CONSTANT_U64:
+        case CONSTANT_CHAR:
             break;
     }
 }

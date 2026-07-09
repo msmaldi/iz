@@ -3,24 +3,24 @@
 
 struct function_t
 {
-    type_t return_type;
-    span_t name;
+    type_t            return_type;
+    struct location_t name;
     array_t(declaration_t) argument_s;
-    statement_t statement;
-    type_t type;
+    statement_t       statement;
+    type_t            type;
 };
 
 struct argument_t
 {
-    type_t type;
-    span_t name;
+    type_t            type;
+    struct location_t name;
 };
 
 struct variable_t
 {
-    type_t type;
-    span_t name;
-    expression_t initializer;
+    type_t            type;
+    struct location_t name;
+    expression_t      initializer;
 };
 
 struct declaration_t
@@ -53,7 +53,7 @@ type_t prepare_callable(type_t return_type, array_t(declaration_t) argument_s)
     return type_callable_new(return_type, param_s);
 }
 
-declaration_t function_new(type_t return_type, span_t name, array_t(declaration_t) argument_s, statement_t statement)
+declaration_t function_new(type_t return_type, struct location_t name, array_t(declaration_t) argument_s, statement_t statement)
 {
     declaration_t declaration = declaration_new(DECLARATION_FUNCTION);
     function_t function = FUNCTION(declaration);
@@ -65,7 +65,7 @@ declaration_t function_new(type_t return_type, span_t name, array_t(declaration_
     return declaration;
 }
 
-declaration_t argument_new(type_t type, span_t name)
+declaration_t argument_new(type_t type, struct location_t name)
 {
     declaration_t declaration = declaration_new(DECLARATION_ARGUMENT);
     argument_t argument = ARGUMENT(declaration);
@@ -75,7 +75,7 @@ declaration_t argument_new(type_t type, span_t name)
     return declaration;
 }
 
-declaration_t variable_new(type_t type, span_t name, expression_t initializer)
+declaration_t variable_new(type_t type, struct location_t name, expression_t initializer)
 {
     declaration_t declaration = declaration_new(DECLARATION_VARIABLE);
     variable_t variable = VARIABLE(declaration);
@@ -129,16 +129,16 @@ declaration_kind_t declaration_kind(declaration_t declaration)
     return declaration->kind;
 }
 
-span_t declaration_name(declaration_t declaration)
+location_t declaration_name(declaration_t declaration)
 {
     switch (declaration->kind) // LCOV_EXCL_LINE
     {
     case DECLARATION_FUNCTION:
-        return FUNCTION(declaration)->name;
+        return &FUNCTION(declaration)->name;
     case DECLARATION_ARGUMENT:
-        return ARGUMENT(declaration)->name;
+        return &ARGUMENT(declaration)->name;
     case DECLARATION_VARIABLE:
-        return VARIABLE(declaration)->name;
+        return &VARIABLE(declaration)->name;
     }
 
     __builtin_unreachable();
@@ -171,9 +171,9 @@ type_t function_return_type(function_t function)
     return function->return_type;
 }
 
-span_t function_name(function_t function)
+location_t function_name(function_t function)
 {
-    return function->name;
+    return &function->name;
 }
 
 array_t(declaration_t) function_argument_s(function_t function)
@@ -191,9 +191,9 @@ type_t argument_type(argument_t argument)
     return argument->type;
 }
 
-span_t argument_name(argument_t argument)
+location_t argument_name(argument_t argument)
 {
-    return argument->name;
+    return &argument->name;
 }
 
 type_t variable_type(variable_t variable)
@@ -201,9 +201,9 @@ type_t variable_type(variable_t variable)
     return variable->type;
 }
 
-span_t variable_name(variable_t variable)
+location_t variable_name(variable_t variable)
 {
-    return variable->name;
+    return &variable->name;
 }
 
 expression_t variable_initializer(variable_t variable)

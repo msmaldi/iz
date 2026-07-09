@@ -39,7 +39,7 @@ static void test_data(void **arg)
             expression_t expression = constant_u64_new(1);
             statement_t statement = return_new(expression);
 
-            declaration_t one_fn = function_new(u64_ty, name, argument_s, statement);
+            declaration_t one_fn = function_new(u64_ty, (struct location_t){ .span = name }, argument_s, statement);
 
             declaration_s = array_add(declaration_s, one_fn);
         }
@@ -53,14 +53,15 @@ static void test_data(void **arg)
 
             array_t(declaration_t) argument_s = array_empty();
             type_t arg0_ty = type_int_new();
-            declaration_t arg0 = argument_new(arg0_ty, span_sz("n"));
+            declaration_t arg0 = argument_new(arg0_ty, (struct location_t){ .span = span_sz("n") });
             argument_s = array_add(argument_s, arg0);
 
             span_t n = span_sz("n");
-            expression_t expression = identifier_new(n);
+            struct location_t location = { .span = n, .line = 0, .column = 0 };
+            expression_t expression = identifier_new(location);
             statement_t statement = return_new(expression);
 
-            declaration_t num_fn = function_new(int_ty, name, argument_s, statement);
+            declaration_t num_fn = function_new(int_ty, (struct location_t){ .span = name }, argument_s, statement);
 
             declaration_s = array_add(declaration_s, num_fn);
         }

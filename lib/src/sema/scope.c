@@ -108,8 +108,8 @@ static node_t insert_node(node_t root, declaration_t declaration, node_t parent)
         return node;
     }
 
-    span_t decl_name = declaration_name(declaration);
-    span_t root_name = declaration_name(root->declaration);
+    span_t decl_name = location_span(declaration_name(declaration));
+    span_t root_name = location_span(declaration_name(root->declaration));
     int cmp = span_cmp(decl_name, root_name);
 
     if (cmp == 0)
@@ -125,12 +125,12 @@ static node_t insert_node(node_t root, declaration_t declaration, node_t parent)
 
 bool scope_add(scope_t scope, declaration_t declaration)
 {
-    span_t name = declaration_name(declaration);
+    span_t name = location_span(declaration_name(declaration));
 
     node_t current = scope->root;
     while (current != NULL)
     {
-        int cmp = span_cmp(name, declaration_name(current->declaration));
+        int cmp = span_cmp(name, location_span(declaration_name(current->declaration)));
         if (cmp == 0) return false;
         current = cmp < 0 ? current->lhs : current->rhs;
     }
@@ -149,7 +149,7 @@ declaration_t scope_find(scope_t scope, span_t name)
     node_t current = scope->root;
     while (current != NULL)
     {
-        int cmp = span_cmp(name, declaration_name(current->declaration));
+        int cmp = span_cmp(name, location_span(declaration_name(current->declaration)));
         if (cmp == 0) return current->declaration;
         current = cmp < 0 ? current->lhs : current->rhs;
     }

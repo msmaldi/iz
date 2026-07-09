@@ -114,3 +114,38 @@ char *source_llvm_name(source_t source)
 
     return target;
 }
+
+location_t location_new(source_t source, span_t span, int line, int column)
+{
+    location_t location = mem_alloc(sizeof(struct location_t));
+    location->source = source;
+    location->span = span;
+    location->line = line;
+    location->column = column;
+    return location;
+}
+
+void location_free(location_t location)
+{
+    mem_free(location);
+}
+
+source_t location_source(location_t location)
+{
+    return location->source;
+}
+
+span_t location_span(location_t location)
+{
+    return location->span;
+}
+
+int location_line(location_t location)
+{
+    return location->line;
+}
+
+int location_column(location_t location)
+{
+    return location->column;
+}

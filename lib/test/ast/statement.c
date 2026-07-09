@@ -26,12 +26,13 @@ static void test_data(void **arg)
 
     {
         span_t name = span_sz("n");
-        expression_t n_expr = identifier_new(name);
+        struct location_t location = { .span = name, .line = 0, .column = 0 };
+        expression_t n_expr = identifier_new(location);
 
         uint64_t two = 2;
         expression_t two_expr = constant_u64_new(two);
 
-        statement_t then_branch = return_new(identifier_new(name));
+        statement_t then_branch = return_new(identifier_new(location));
         statement_t else_branch = NULL;
 
         expression_t condition = binary_new(n_expr, BINARY_LT, two_expr);
@@ -51,12 +52,13 @@ static void test_data(void **arg)
 
     {
         span_t name = span_sz("n");
-        expression_t n_expr = identifier_new(name);
+        struct location_t location = { .span = name, .line = 0, .column = 0 };
+        expression_t n_expr = identifier_new(location);
 
         uint64_t two = 2;
         expression_t two_expr = constant_u64_new(two);
 
-        statement_t then_branch = return_new(identifier_new(name));
+        statement_t then_branch = return_new(identifier_new(location));
         statement_t else_branch = block_new(array_empty());
 
         expression_t condition = binary_new(n_expr, BINARY_LT, two_expr);
@@ -83,7 +85,7 @@ static void test_data(void **arg)
         uint64_t two = 2;
         expression_t two_expr = constant_u64_new(two);
 
-        declaration_t n = variable_new(int_ty, name, two_expr);
+        declaration_t n = variable_new(int_ty, (struct location_t){ .span = name }, two_expr);
 
         array_t(declaration_t) var_s = array_empty();
         var_s = array_add(var_s, n);
@@ -98,7 +100,8 @@ static void test_data(void **arg)
 
     {
         span_t name = span_sz("fib");
-        expression_t fib_expr = identifier_new(name);
+        struct location_t location = { .span = name, .line = 0, .column = 0 };
+        expression_t fib_expr = identifier_new(location);
 
         uint64_t two = 2;
         expression_t two_expr = constant_u64_new(two);

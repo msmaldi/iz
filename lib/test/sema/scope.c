@@ -15,7 +15,7 @@ static declaration_t create_declaration_one()
     expression_t expression = constant_u64_new(1);
     statement_t statement = return_new(expression);
 
-    return function_new(int_ty, name, argument_s, statement);
+    return function_new(int_ty, (struct location_t){ .span = name }, argument_s, statement);
 }
 
 static void success_branch(void **arg)
@@ -37,12 +37,14 @@ static void success_branch(void **arg)
         span_t name = span_sz("num");
         array_t(declaration_t) argument_s = array_empty();
         type_t arg0_ty = type_int_new();
-        declaration_t arg0 = argument_new(arg0_ty, span_sz("n"));
+        declaration_t arg0 = argument_new(arg0_ty, (struct location_t){ .span = span_sz("n") });
         argument_s = array_add(argument_s, arg0);
         span_t n = span_sz("n");
-        expression_t expression = identifier_new(n);
+
+        struct location_t location = { .span = n, .line = 0, .column = 0 };
+        expression_t expression = identifier_new(location);
         statement_t statement = return_new(expression);
-        declaration_t fn_num = function_new(int_ty, name, argument_s, statement);
+        declaration_t fn_num = function_new(int_ty, (struct location_t){ .span = name }, argument_s, statement);
 
         assert_true(scope_add(global, fn_num));
 

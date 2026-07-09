@@ -13,7 +13,7 @@ struct constant_t
 
 struct identifier_t
 {
-    span_t name;
+    struct location_t location;
     declaration_t declaration;
 };
 
@@ -92,11 +92,11 @@ expression_t constant_u64_new(uint64_t u64)
     return expression;
 }
 
-expression_t identifier_new(span_t name)
+expression_t identifier_new(struct location_t location)
 {
     expression_t expression = expression_new(EXPRESSION_IDENTIFIER);
     identifier_t identifier = IDENTIFIER(expression);
-    identifier->name = name;
+    identifier->location = location;
     identifier->declaration = NULL;
     return expression;
 }
@@ -233,7 +233,7 @@ bool constant_bool(constant_t constant)
 
 span_t identifier_name(identifier_t identifier)
 {
-    return identifier->name;
+    return location_span(&identifier->location);
 }
 
 declaration_t identifier_declaration(identifier_t identifier)

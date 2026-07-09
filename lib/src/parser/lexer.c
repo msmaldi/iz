@@ -5,15 +5,17 @@
 #define keywords_len 7
 const char *keywords[keywords_len] = { "bool", "int", "return", "if", "else", "true", "false" };
 
-struct lexer_t lexer_ctor(char *code)
+struct lexer_t lexer_ctor(source_t source)
 {
     return (struct lexer_t)
     {
-        .cursor = code,
-        .line_start = code,
+        .source = source,
+        .cursor = (char *)source_code(source),
+        .line_start = (char *)source_code(source),
         .line = 0,
         .column = 0,
         .offset = 0,
+        .location = { .source = source, .span = { .data = NULL, .size = 0 }, .line = 0, .column = 0 },
         .span = { .data = NULL, .size = 0 }
     };
 }
@@ -131,6 +133,9 @@ bool is_identifier(lexer_t lexer)
         if (span_eq(span, span_sz(keywords[i])))
             return false;
 
+    lexer->location.span = span;
+    lexer->location.line = lexer->line;
+    lexer->location.column = lexer->column;
     advance(lexer, span.size);
     lexer->span = span;
     return true;

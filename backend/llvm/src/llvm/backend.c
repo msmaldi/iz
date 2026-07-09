@@ -562,7 +562,7 @@ void codegen_function_prototype(codegen_t codegen, function_t function)
     type_t fn_type = function_type(function);
     LLVMTypeRef llvm_fn_type = codegen_type(codegen, fn_type);
 
-    LLVMValueRef llvm_function = LLVMAddFunction2(codegen->module, function_name(function), llvm_fn_type);
+    LLVMValueRef llvm_function = LLVMAddFunction2(codegen->module, location_span(function_name(function)), llvm_fn_type);
     map_at(codegen->values, (declaration_t)function, llvm_function);
 
     array_t(declaration_t) argument_s = function_argument_s(function);
@@ -572,7 +572,7 @@ void codegen_function_prototype(codegen_t codegen, function_t function)
         declaration_t argument = argument_s[i];
         LLVMValueRef llvm_arg = LLVMGetParam(llvm_function, i);
 
-        span_t argument_name = declaration_name(argument);
+        span_t argument_name = location_span(declaration_name(argument));
         LLVMSetValueName2(llvm_arg, argument_name.data, argument_name.size);
 
         map_at(codegen->values, argument, llvm_arg);

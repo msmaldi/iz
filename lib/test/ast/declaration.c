@@ -26,12 +26,12 @@ static void test_data(void **arg)
         expression_t expression = constant_u64_new(1);
         statement_t statement = return_new(expression);
 
-        declaration_t declaration = function_new(u64_ty, name, argument_s, statement);
+        declaration_t declaration = function_new(u64_ty, (struct location_t){ .span = name }, argument_s, statement);
         assert_int_equal(DECLARATION_FUNCTION, declaration_kind(declaration));
 
         function_t function = FUNCTION(declaration);
         assert_int_equal(u64_ty, function_return_type(function));
-        assert_true(span_eq(name, function_name(function)));
+        assert_true(span_eq(name, location_span(function_name(function))));
         assert_int_equal(argument_s, function_argument_s(function));
         assert_int_equal(statement, function_statement(function));
 
@@ -57,16 +57,18 @@ static void test_data(void **arg)
 
         array_t(declaration_t) argument_s = array_empty();
         type_t arg0_ty = type_int_new();
-        declaration_t arg0 = argument_new(arg0_ty, span_sz("n"));
+        declaration_t arg0 = argument_new(arg0_ty, (struct location_t){ .span = span_sz("n") });
         argument_s = array_add(argument_s, arg0);
         assert_int_equal(arg0_ty, declaration_type(arg0));
 
         argument_t argument = ARGUMENT(arg0);
         assert_int_equal(arg0_ty, argument_type(argument));
-        assert_true(span_eq(span_sz("n"), argument_name(argument)));
+        assert_true(span_eq(span_sz("n"), location_span(argument_name(argument))));
 
         span_t n = span_sz("n");
-        expression_t expression = identifier_new(n);
+        struct location_t location = { .span = n, .line = 0, .column = 0 };
+        expression_t expression = identifier_new(location);
+
         assert_int_equal(EXPRESSION_IDENTIFIER, expression_kind(expression));
         identifier_t identifier = IDENTIFIER(expression);
         identifier_set_declaration(identifier, arg0);
@@ -75,14 +77,14 @@ static void test_data(void **arg)
 
         statement_t statement = return_new(expression);
 
-        declaration_t declaration = function_new(u64_ty, name, argument_s, statement);
+        declaration_t declaration = function_new(u64_ty, (struct location_t){ .span = name }, argument_s, statement);
         assert_int_equal(DECLARATION_FUNCTION, declaration_kind(declaration));
         type_t declaration_ty = declaration_type(declaration);
         assert_int_equal(TYPE_CALLABLE, type_kind(declaration_ty));
 
         function_t function = FUNCTION(declaration);
         assert_int_equal(u64_ty, function_return_type(function));
-        assert_true(span_eq(name, function_name(function)));
+        assert_true(span_eq(name, location_span(function_name(function))));
         assert_int_equal(argument_s, function_argument_s(function));
 
         assert_int_equal(statement, function_statement(function));
@@ -104,11 +106,11 @@ static void test_data(void **arg)
         type_t int_ty = type_int_new();
         span_t name = span_sz("n");
 
-        declaration_t n = variable_new(int_ty, name, NULL);
+        declaration_t n = variable_new(int_ty, (struct location_t){ .span = name }, NULL);
         variable_t var_n = VARIABLE(n);
 
         assert_true(type_eq(variable_type(var_n), int_ty));
-        assert_true(span_eq(variable_name(var_n), name));
+        assert_true(span_eq(location_span(variable_name(var_n)), name));
         assert_null(variable_initializer(var_n));
 
         declaration_free(n);
@@ -121,7 +123,7 @@ static void test_data(void **arg)
         uint64_t two = 2;
         expression_t two_expr = constant_u64_new(two);
 
-        declaration_t n = variable_new(int_ty, name, two_expr);
+        declaration_t n = variable_new(int_ty, (struct location_t){ .span = name }, two_expr);
 
         declaration_free(n);
     }

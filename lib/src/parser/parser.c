@@ -20,7 +20,7 @@ expression_t parse_expression(parser_t parser);
 statement_t parse_statement(parser_t parser);
 declaration_t parse_function(parser_t parser);
 type_t parse_type(parser_t parser);
-span_t parse_name(parser_t parser);
+struct location_t parse_name(parser_t parser);
 declaration_t parse_argument(parser_t parser);
 unit_t parse_unit(parser_t parser);
 
@@ -34,8 +34,7 @@ lexer_t lexer(parser_t parser)
 
 unit_t syntax_analysis(source_t source)
 {
-    char *code = (char *)source_code(source);
-    struct parser_t parser = { .source = source, .lexer = lexer_ctor(code) };
+    struct parser_t parser = { .source = source, .lexer = lexer_ctor(source) };
 
     unit_t unit = parse_unit(&parser);
 
@@ -172,8 +171,8 @@ statement_t scan_var_or_expression_s(parser_t parser)
     array_t(declaration_t) variable_s = array_empty();
     while (true)
     {
-        span_t identifier = parse_name(parser);
-        if (identifier.data == NULL)
+        struct location_t identifier = parse_name(parser);
+        if (identifier.span.data == NULL)
         {
             display_error(parser, "expected identifier");
             goto leave_variable_s;
@@ -234,8 +233,8 @@ declaration_t parse_argument(parser_t parser)
         goto leave_null;
     }
 
-    span_t identifier = parse_name(parser);
-    if (identifier.data == NULL)
+    struct location_t identifier = parse_name(parser);
+    if (identifier.span.data == NULL)
     {
         display_error(parser, "expected identifier");
         goto leave_ret_type;
@@ -303,8 +302,8 @@ declaration_t parse_function(parser_t parser)
         goto leave_null;
     }
 
-    span_t identifier = parse_name(parser);
-    if (identifier.data == NULL)
+    struct location_t identifier = parse_name(parser);
+    if (identifier.span.data == NULL)
     {
         display_error(parser, "expected identifier");
         goto leave_ret_type;
@@ -328,14 +327,14 @@ leave_null:;
     return NULL;
 }
 
-span_t parse_name(parser_t parser)
+struct location_t parse_name(parser_t parser)
 {
     lexer_t lex = lexer(parser);
 
     if (is_identifier(lex))
-        return lex->span;
+        return (struct location_t){ .span = lex->span, .source = parser->source, .line = lex->line, .column = lex->column };
 
-    return (span_t){ .data = NULL, .size = 0 };
+    return (struct location_t){ .span = { .data = NULL, .size = 0 } };
 }
 
 type_t parse_type(parser_t parser)
@@ -454,7 +453,8 @@ expression_t scan_identifier(parser_t parser)
         return NULL;
     }
 
-    expression_t identifier = identifier_new(lex->span);
+    struct location_t location = { .span = lex->span, .source = parser->source, .line = lex->line, .column = lex->column };
+    expression_t identifier = identifier_new(location);
     return suffix(parser, identifier);
 }
 
@@ -480,14 +480,26 @@ expression_t scan_multiplicative(parser_t parser)
         switch (token_kind)
         {
             case TOKEN_STAR:
-                lhs = binary_new(lhs, BINARY_MUL, parse_primary(parser));
+            {
+                expression_t rhs = parse_primary(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = binary_new(lhs, BINARY_MUL, rhs);
                 break;
+            }
             case TOKEN_SLASH:
-                lhs = binary_new(lhs, BINARY_DIV, parse_primary(parser));
+            {
+                expression_t rhs = parse_primary(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = binary_new(lhs, BINARY_DIV, rhs);
                 break;
+            }
             case TOKEN_PERCENT:
-                lhs = binary_new(lhs, BINARY_REM, parse_primary(parser));
+            {
+                expression_t rhs = parse_primary(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = binary_new(lhs, BINARY_REM, rhs);
                 break;
+            }
             default:
                 return lhs;
         }
@@ -503,11 +515,19 @@ expression_t scan_additive(parser_t parser)
         switch (token_kind)
         {
             case TOKEN_PLUS:
-                lhs = binary_new(lhs, BINARY_ADD, scan_multiplicative(parser));
+            {
+                expression_t rhs = scan_multiplicative(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = binary_new(lhs, BINARY_ADD, rhs);
                 break;
+            }
             case TOKEN_MINUS:
-                lhs = binary_new(lhs, BINARY_SUB, scan_multiplicative(parser));
+            {
+                expression_t rhs = scan_multiplicative(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = binary_new(lhs, BINARY_SUB, rhs);
                 break;
+            }
             default:
                 return lhs;
         }
@@ -523,17 +543,33 @@ expression_t scan_comparition(parser_t parser)
         switch (token_kind)
         {
             case TOKEN_LT:
-                lhs = binary_new(lhs, BINARY_LT, scan_additive(parser));
+            {
+                expression_t rhs = scan_additive(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = binary_new(lhs, BINARY_LT, rhs);
                 break;
+            }
             case TOKEN_GT:
-                lhs = binary_new(lhs, BINARY_GT, scan_additive(parser));
+            {
+                expression_t rhs = scan_additive(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = binary_new(lhs, BINARY_GT, rhs);
                 break;
+            }
             case TOKEN_LT_EQ:
-                lhs = binary_new(lhs, BINARY_LE, scan_additive(parser));
+            {
+                expression_t rhs = scan_additive(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = binary_new(lhs, BINARY_LE, rhs);
                 break;
+            }
             case TOKEN_GT_EQ:
-                lhs = binary_new(lhs, BINARY_GE, scan_additive(parser));
+            {
+                expression_t rhs = scan_additive(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = binary_new(lhs, BINARY_GE, rhs);
                 break;
+            }
             default:
                 return lhs;
         }
@@ -549,11 +585,19 @@ expression_t scan_equality(parser_t parser)
         switch (token_kind)
         {
             case TOKEN_EQ_EQ:
-                lhs = binary_new(lhs, BINARY_EQ, scan_comparition(parser));
+            {
+                expression_t rhs = scan_comparition(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = binary_new(lhs, BINARY_EQ, rhs);
                 break;
+            }
             case TOKEN_NO_EQ:
-                lhs = binary_new(lhs, BINARY_NE, scan_comparition(parser));
+            {
+                expression_t rhs = scan_comparition(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = binary_new(lhs, BINARY_NE, rhs);
                 break;
+            }
             default:
                 return lhs;
         }
@@ -569,11 +613,19 @@ expression_t scan_conditional(parser_t parser)
         switch (token_kind)
         {
             case TOKEN_AND_AND:
-                lhs = conditional_new(lhs, CONDITIONAL_AND, scan_equality(parser));
+            {
+                expression_t rhs = scan_equality(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = conditional_new(lhs, CONDITIONAL_AND, rhs);
                 break;
+            }
             case TOKEN_OR_OR:
-                lhs = conditional_new(lhs, CONDITIONAL_OR, scan_equality(parser));
+            {
+                expression_t rhs = scan_equality(parser);
+                if (rhs == NULL) { expression_free(lhs); return NULL; }
+                lhs = conditional_new(lhs, CONDITIONAL_OR, rhs);
                 break;
+            }
             default:
                 return lhs;
         }

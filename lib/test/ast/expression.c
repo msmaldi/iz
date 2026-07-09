@@ -26,7 +26,8 @@ static void test_data(void **arg)
 
     {
         span_t name = span_sz("n");
-        expression_t expression = identifier_new(name);
+        struct location_t location = { .span = name, .line = 0, .column = 0 };
+        expression_t expression = identifier_new(location);
         assert_int_equal(EXPRESSION_IDENTIFIER, expression_kind(expression));
 
         identifier_t identifier = IDENTIFIER(expression);
@@ -40,7 +41,8 @@ static void test_data(void **arg)
 
     {
         span_t name = span_sz("n");
-        expression_t n_expr = identifier_new(name);
+        struct location_t location = { .span = name, .line = 0, .column = 0 };
+        expression_t n_expr = identifier_new(location);
 
         uint64_t one = 1;
         expression_t one_expr = constant_u64_new(one);
@@ -59,7 +61,8 @@ static void test_data(void **arg)
 
     {
         span_t name = span_sz("fib");
-        expression_t fib_expr = identifier_new(name);
+        struct location_t location = { .span = name, .line = 0, .column = 0 };
+        expression_t fib_expr = identifier_new(location);
 
         uint64_t one = 1;
         expression_t one_expr = constant_u64_new(one);
@@ -80,7 +83,8 @@ static void test_data(void **arg)
 
     {
         span_t n = span_sz("n");
-        expression_t n_expr = identifier_new(n);
+        struct location_t location = { .span = n, .line = 0, .column = 0 };
+        expression_t n_expr = identifier_new(location);
 
         uint64_t one = 1;
         expression_t one_expr = constant_u64_new(one);
@@ -98,7 +102,8 @@ static void test_data(void **arg)
 
     {
         span_t name = span_sz("n");
-        expression_t n_expr = identifier_new(name);
+        struct location_t location = { .span = name, .line = 0, .column = 0 };
+        expression_t n_expr = identifier_new(location);
 
         uint64_t one = 1;
         expression_t one_expr = constant_u64_new(one);

@@ -143,7 +143,7 @@ void function_print(function_t function, FILE* out, int tab)
 {
     tab_print(tab, out);
     const char *format = BOLDMAGENTA "%s" BOLDYELLOW " %p" GREEN " %.*s " RESET;
-    fprintf(out, format, "function_t", function, function_name(function).size, function_name(function).data);
+    fprintf(out, format, "function_t", function, location_span(function_name(function)).size, location_span(function_name(function)).data);
 
     array_t(declaration_t) argument_s = function_argument_s(function);
     size_t size = array_size(argument_s);
@@ -181,7 +181,7 @@ static
 void argument_print(argument_t argument, FILE* out, int tab)
 {
     const char *format = BOLDMAGENTA "    %s" BOLDYELLOW " %p" GREEN " %.*s" RESET;
-    fprintf(out, format, "argument_t", argument, argument_name(argument).size, argument_name(argument).data);
+    fprintf(out, format, "argument_t", argument, location_span(argument_name(argument)).size, location_span(argument_name(argument)).data);
 
     type_t type = argument_type(argument);
     fprintf(out, " '");
@@ -194,7 +194,7 @@ void variable_print(variable_t variable, FILE* out, int tab)
 {
     tab_print(tab, out);
     const char *format = BOLDMAGENTA "%s" BOLDYELLOW " %p" GREEN " %.*s" RESET;
-    fprintf(out, format, "variable_t", variable, variable_name(variable).size, variable_name(variable).data);
+    fprintf(out, format, "variable_t", variable, location_span(variable_name(variable)).size, location_span(variable_name(variable)).data);
 
     type_t type = variable_type(variable);
     fprintf(out, " '");

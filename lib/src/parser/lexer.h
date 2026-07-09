@@ -1,7 +1,7 @@
 #ifndef _LEXER_H_
 #define _LEXER_H_
 
-#include <common/span.h>
+#include "common/source.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -43,29 +43,21 @@ enum keyword_t
 
 typedef char* cursor_t;
 
-typedef struct location* location_t;
-
-struct location
-{
-    cursor_t line_start;
-    int      line;
-    span_t   span;
-};
-
-
 typedef struct lexer_t* lexer_t;
 struct lexer_t
 {
+    source_t   source;
     cursor_t   cursor;
     cursor_t   line_start;
+    int        offset;
     int        line;
     int        column;
-    int        offset;
+    struct location_t location;
     span_t     span;
 };
 
-struct lexer_t lexer_ctor(char *code);
-#define lexer_alloc(code) ((struct lexer_t[]){ lexer_ctor(code) })
+struct lexer_t lexer_ctor(source_t source);
+#define lexer_alloc(source) ((struct lexer_t[]){ lexer_ctor(source) })
 
 bool is_eof(lexer_t lexer);
 

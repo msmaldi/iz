@@ -14,7 +14,7 @@ size_t sema_errors(sema_t sema);
 void   sema_analysis(sema_t sema);
 
 static
-void display_error(source_t source, span_t span, const char *msg);
+void display_error(location_t location, const char *msg);
 
 struct sema_t
 {
@@ -92,7 +92,7 @@ void unit_map_functions(sema_t sema, unit_t unit)
         declaration_t declaration = unit_declaration_s(unit)[i];
         if (!scope_add(sema->scope, declaration))
         {
-            display_error(unit_source(unit), declaration_name(declaration), "redefinition of");
+            display_error(declaration_name(declaration), "redefinition of");
             sema->errors++;
         }
     }
@@ -105,7 +105,8 @@ void resolve_identifier(sema_t sema, identifier_t identifier)
     declaration_t declaration = scope_find(sema->scope, name);
     if (declaration == NULL)
     {
-        display_error(unit_source(sema->unit), name, "undeclared identifier");
+        struct location_t loc = { .span = name, .source = unit_source(sema->unit) };
+        display_error(&loc, "undeclared identifier");
 
         sema->errors++;
         return;
@@ -127,7 +128,7 @@ expression_t implicit_cast(sema_t sema, expression_t expression, type_t expected
             return implicit_cast_new(IMPLICIT_CAST_LVALUE_TO_RVALUE, expression);
         }
 
-        display_error(unit_source(sema->unit), declaration_name(declaration), "incompatible type");
+        display_error(declaration_name(declaration), "incompatible type");
         sema->errors++;
     }
 
@@ -263,7 +264,7 @@ void return_analysis(sema_t sema, return_t ret)
     bool eq = type_eq(expected, actual);
     if (!eq)
     {
-        display_error(unit_source(sema->unit), function_name(sema->function), "return type mismatch");
+        display_error(function_name(sema->function), "return type mismatch");
         sema->errors++;
         return;
     }
@@ -304,7 +305,7 @@ void var_analysis(sema_t sema, var_t var)
 
             if (!type_eq(var_type, expr_type))
             {
-                display_error(unit_source(sema->unit), declaration_name(declaration), "incompatible type");
+                display_error(declaration_name(declaration), "incompatible type");
                 sema->errors++;
             }
 
@@ -314,7 +315,7 @@ void var_analysis(sema_t sema, var_t var)
 
         if (!scope_add(sema->scope, declaration))
         {
-            display_error(unit_source(sema->unit), declaration_name(declaration), "redefinition of");
+            display_error(declaration_name(declaration), "redefinition of");
             sema->errors++;
         }
     }
@@ -363,7 +364,7 @@ void map_argument_s(sema_t sema, array_t(declaration_t) argument_s)
         declaration_t argument = argument_s[i];
         if (!scope_add(sema->scope, argument))
         {
-            display_error(unit_source(sema->unit), declaration_name(argument), "redefinition of");
+            display_error(declaration_name(argument), "redefinition of");
             sema->errors++;
         }
     }
@@ -383,7 +384,7 @@ void function_analysis(sema_t sema, function_t function)
 
     if (!statement_all_path_return_value(statement))
     {
-        display_error(unit_source(sema->unit), function_name(function), "missing return statement");
+        display_error(function_name(function), "missing return statement");
         sema->errors++;
     }
 
@@ -445,16 +446,8 @@ void sema_analysis(sema_t sema)
 #define BOLDCYAN    "\033[1m\033[36m"
 #define BOLDWHITE   "\033[1m\033[37m"
 
-struct diagnostic_t
-{
-    char* line_start;
-    int   line_size;
-    int   line;
-    int   column;
-};
-
 static
-int get_line_size(char* line_start)
+int get_line_size(const char *line_start)
 {
     int size = 0;
     while (line_start[size] != '\n' && line_start[size] != '\0')
@@ -464,51 +457,24 @@ int get_line_size(char* line_start)
 }
 
 static
-void fill_diagnostic(struct diagnostic_t *diagnostic, char *code, span_t span)
+void display_error(location_t location, const char *msg)
 {
-    char *start = code;
-    char *end = (char *)span.data;
+    span_t span = location_span(location);
+    int column   = location_column(location);
 
-    diagnostic->line_start = start;
-    diagnostic->line = 0;
-    diagnostic->column = 0;
+    // column is 0-based, so span.data - column points to the start of the line
+    const char *line_start = span.data - column;
+    int line_size = get_line_size(line_start);
 
-    while (start < end)
-    {
-        char c = *start++;
-        if (c != '\n')
-        {
-            diagnostic->column++;
-        }
-        else
-        {
-            diagnostic->line++;
-            diagnostic->column = 0;
-            diagnostic->line_start = start;
-        }
-
-    }
-
-    diagnostic->line_size = get_line_size(diagnostic->line_start);
-}
-
-static
-void display_error(source_t source, span_t span, const char *msg)
-{
-    struct diagnostic_t diagnostic;
-    fill_diagnostic(&diagnostic, (char *)source_code(source), span);
-
-    fprintf(stderr, BOLDWHITE "%s:%d:%d ", source_path(source), diagnostic.line + 1, diagnostic.column + 1);
+    fprintf(stderr, BOLDWHITE "%s:%d:%d ", source_path(location_source(location)), location_line(location) + 1, column + 1);
     fprintf(stderr, BOLDRED "error: " BOLDWHITE "%s '%.*s'\n" RESET, msg, span.size, span.data);
 
     char line_counter[20] = { 0 };
-    int line_counter_len = snprintf(line_counter, sizeof(line_counter), "%5u | ", diagnostic.line + 1);
+    int line_counter_len = snprintf(line_counter, sizeof(line_counter), "%5u | ", location_line(location) + 1);
     fprintf(stderr, "%s", line_counter);
+    fprintf(stderr, "%.*s\n", line_size, line_start);
 
-    int line_size = get_line_size(diagnostic.line_start);
-    fprintf(stderr, "%.*s\n", line_size, diagnostic.line_start);
-
-    int size = line_counter_len + diagnostic.column;
+    int size = line_counter_len + column;
     for (size_t i = 0; i < size; i++)
         fputc(' ', stderr);
 

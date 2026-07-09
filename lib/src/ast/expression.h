@@ -51,7 +51,7 @@ enum conditional_kind_t
 
 expression_t     constant_bool_new(bool _bool);
 expression_t     constant_u64_new(uint64_t u64);
-expression_t     identifier_new(span_t name);
+expression_t     identifier_new(struct location_t location);
 expression_t     binary_new(expression_t lhs, binary_kind_t op, expression_t rhs);
 expression_t     call_new(expression_t callee, array_t(expression_t) argument_s);
 expression_t     assignment_new(expression_t lvalue, expression_t rvalue);

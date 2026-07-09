@@ -80,6 +80,23 @@ static void success_branch(void **arg)
 
         compilation_free(compilation);
     }
+
+    {
+        // void* is a real value type (a pointer whose pointee happens to be
+        // void), unlike bare void: it is allowed as a parameter/return type
+        // and still requires an explicit return statement.
+        char *code =
+        "void* identity(void* p)" LF
+        "    return p;"           LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "void_ptr_ok.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_non_null(compilation);
+
+        compilation_print(compilation, stdout);
+
+        compilation_free(compilation);
+    }
 }
 
 static void failure_branch(void **arg)
@@ -399,6 +416,34 @@ static void failure_branch(void **arg)
         "    return 1;"            LF
         ;
         unit_t unit = syntax_analysis(source_inline(code, "sema_error023.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // void* must not be treated as bare void: it still needs an
+        // explicit return statement (only bare void functions skip that
+        // check).
+        char *code =
+        "void* missing_return(int* p)" LF
+        "{"                            LF
+        "    int x;"                   LF
+        "}"
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error024.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // A void-returning function still cannot take a bare void
+        // parameter - void is only valid as a return type.
+        char *code =
+        "void invalidparam(void invalid)" LF
+        "{"                               LF
+        "}"
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error025.iz"));
         compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
         assert_null(compilation);
     }

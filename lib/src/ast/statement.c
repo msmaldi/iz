@@ -226,6 +226,11 @@ expression_t if_condition(if_t ifelse)
     return ifelse->condition;
 }
 
+void if_set_condition(if_t ifelse, expression_t condition)
+{
+    ifelse->condition = condition;
+}
+
 statement_t if_then_branch(if_t ifelse)
 {
     return ifelse->then_branch;

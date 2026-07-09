@@ -177,6 +177,136 @@ static void failure_branch(void **arg)
         compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
         assert_null(compilation);
     }
+
+    {
+        char *code =
+        "int num(bool b)" LF
+        "{"               LF
+        "    int x = b;"  LF
+        "    return x;"   LF
+        "}"
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error010.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // int + bool: used to crash codegen (LLVMBuildAdd on mismatched
+        // widths), now caught by binary_analysis's type check.
+        char *code =
+        "int add_bad(int n, bool b)" LF
+        "    return n + b;"          LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error011.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // Undeclared identifier used as a binary operand: used to segfault
+        // (implicit_cast dereferenced a NULL declaration); check_type's
+        // NULL-type guard must avoid a second, cascading diagnostic. Tried
+        // on both sides so both short-circuit paths of the NULL check (and
+        // expression_location's identifier-with-no-declaration fallback)
+        // get exercised.
+        char *code =
+        "int add_bad(int n)"        LF
+        "    return not_exist + n;" LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error012.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        char *code =
+        "int add_bad(int n)"        LF
+        "    return n + not_exist;" LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error012b.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // Plain assignment (not a var declaration) with a mismatched type
+        // on the right-hand side was never checked before.
+        char *code =
+        "int assign_bad(int x, bool b)" LF
+        "{"                             LF
+        "    x = b;"                    LF
+        "    return x;"                 LF
+        "}"
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error013.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // if condition must be bool.
+        char *code =
+        "int if_bad(int n)" LF
+        "{"                 LF
+        "    if (n)"        LF
+        "        return 1;" LF
+        "    return 0;"     LF
+        "}"
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error014.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // && / || operands must be bool.
+        char *code =
+        "bool cond_bad(int n)" LF
+        "    return n && n;"   LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error015.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // Wrong number of arguments in a call.
+        char *code =
+        "int num(int n)"      LF
+        "    return n;"       LF
+        "int call_bad()"      LF
+        "    return num(1, 2);" LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error016.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // Argument type does not match the corresponding parameter type.
+        char *code =
+        "int num(int n)"       LF
+        "    return n;"        LF
+        "int call_bad()"       LF
+        "    return num(true);" LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error017.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
+
+    {
+        // Calling an undeclared function: the callee never resolves to a
+        // callable type, so no argument/arity checks should run either.
+        char *code =
+        "int call_bad()"          LF
+        "    return not_a_function(1);" LF
+        ;
+        unit_t unit = syntax_analysis(source_inline(code, "sema_error018.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        assert_null(compilation);
+    }
 }
 
 int main()

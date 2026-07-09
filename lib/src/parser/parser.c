@@ -147,7 +147,7 @@ statement_t scan_act(parser_t parser, bool require_semicolon)
     if (expression_s == NULL)
         goto leave_null;
 
-    if (require_semicolon && !is_semicolon(lexer(parser)))
+    if (require_semicolon && !is_semicolon(lexer(parser))) // LCOV_EXCL_BR_LINE (only caller always passes true)
     {
         display_error(parser, "expected ';'");
         goto leave_expression_s;

@@ -123,6 +123,36 @@ static void test_data(void **arg)
 
         expression_free(expression);
     }
+
+    {
+        uint64_t zero = 0;
+        expression_t lvalue = constant_u64_new(zero);
+
+        uint64_t one = 1;
+        expression_t rvalue = constant_u64_new(one);
+
+        expression_t assignment_expr = assignment_new(lvalue, rvalue);
+
+        type_t type_actual = expression_type(assignment_expr);
+        type_t type_expected = type_int();
+        assert_int_equal(type_expected, type_actual);
+
+        expression_free(assignment_expr);
+    }
+
+    {
+        assert_string_equal("+", binary_kind_string(BINARY_ADD));
+        assert_string_equal("-", binary_kind_string(BINARY_SUB));
+        assert_string_equal("*", binary_kind_string(BINARY_MUL));
+        assert_string_equal("/", binary_kind_string(BINARY_DIV));
+        assert_string_equal("%", binary_kind_string(BINARY_REM));
+        assert_string_equal("==", binary_kind_string(BINARY_EQ));
+        assert_string_equal("!=", binary_kind_string(BINARY_NE));
+        assert_string_equal("<", binary_kind_string(BINARY_LT));
+        assert_string_equal("<=", binary_kind_string(BINARY_LE));
+        assert_string_equal(">", binary_kind_string(BINARY_GT));
+        assert_string_equal(">=", binary_kind_string(BINARY_GE));
+    }
 }
 
 int main()

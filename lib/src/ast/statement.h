@@ -29,6 +29,7 @@ expression_t return_expression(return_t ret);
 void         return_set_expression(return_t ret, expression_t expression);
 
 expression_t if_condition(if_t ifelse);
+void         if_set_condition(if_t ifelse, expression_t condition);
 statement_t  if_then_branch(if_t ifelse);
 statement_t  if_else_branch(if_t ifelse);
 

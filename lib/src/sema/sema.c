@@ -115,24 +115,50 @@ void resolve_identifier(sema_t sema, identifier_t identifier)
     identifier_set_declaration(identifier, declaration);
 }
 
-expression_t implicit_cast(sema_t sema, expression_t expression, type_t expected_type)
+// Inserts the lvalue-to-rvalue cast an identifier needs to be read as a
+// value. This does not check types: callers must validate compatibility
+// themselves (see check_type()) before relying on the result.
+expression_t implicit_cast(sema_t sema, expression_t expression)
 {
-    expression_kind_t kind = expression_kind(expression);
+    (void) sema;
 
-    if (kind == EXPRESSION_IDENTIFIER)
-    {
-        declaration_t declaration = identifier_declaration(IDENTIFIER(expression));
-        type_t identifier_type = declaration_type(declaration);
-        if (type_eq(expected_type, identifier_type))
-        {
-            return implicit_cast_new(IMPLICIT_CAST_LVALUE_TO_RVALUE, expression);
-        }
-
-        display_error(declaration_name(declaration), "incompatible type");
-        sema->errors++;
-    }
+    if (expression_kind(expression) == EXPRESSION_IDENTIFIER)
+        return implicit_cast_new(IMPLICIT_CAST_LVALUE_TO_RVALUE, expression);
 
     return expression;
+}
+
+static
+void check_type(sema_t sema, location_t location, type_t expected, type_t actual, const char *msg)
+{
+    // A NULL type means an earlier error (e.g. an undeclared identifier)
+    // already explains this expression; do not cascade a second diagnostic.
+    if (expected == NULL || actual == NULL)
+        return;
+
+    if (!type_eq(expected, actual))
+    {
+        display_error(location, msg);
+        sema->errors++;
+    }
+}
+
+// Best-effort diagnostic anchor for expressions that have no location of
+// their own (binary/call/assignment/conditional nodes): the lvalue of an
+// assignment is always an identifier, so prefer its declaration name;
+// otherwise fall back to the enclosing function's name, same as
+// return_analysis() already does for "return type mismatch".
+static
+location_t expression_location(sema_t sema, expression_t expression)
+{
+    if (expression_kind(expression) == EXPRESSION_IDENTIFIER)
+    {
+        declaration_t declaration = identifier_declaration(IDENTIFIER(expression));
+        if (declaration != NULL)
+            return declaration_name(declaration);
+    }
+
+    return function_name(sema->function);
 }
 
 void expression_analysis(sema_t sema, expression_t expression);
@@ -153,15 +179,16 @@ void binary_analysis(sema_t sema, binary_t binary)
 {
     expression_t lhs = binary_lhs(binary);
     expression_analysis(sema, lhs);
-
     type_t type_lhs = expression_type(lhs);
-    binary_set_lhs(binary, implicit_cast(sema, lhs, type_lhs));
 
     expression_t rhs = binary_rhs(binary);
     expression_analysis(sema, rhs);
-
     type_t type_rhs = expression_type(rhs);
-    binary_set_rhs(binary, implicit_cast(sema, rhs, type_rhs));
+
+    check_type(sema, expression_location(sema, lhs), type_lhs, type_rhs, "incompatible type in binary expression");
+
+    binary_set_lhs(binary, implicit_cast(sema, lhs));
+    binary_set_rhs(binary, implicit_cast(sema, rhs));
 }
 
 static
@@ -170,15 +197,30 @@ void call_analysis(sema_t sema, call_t call)
     expression_t callee = call_callee(call);
     expression_analysis(sema, callee);
 
+    type_t callee_type = expression_type(callee);
+    array_t(type_t) param_s = NULL;
+    if (callee_type != NULL && type_kind(callee_type) == TYPE_CALLABLE)
+        param_s = callable_param_s(CALLABLE(callee_type));
+
     array_t(expression_t) argument_s = call_argument_s(call);
     size_t size = array_size(argument_s);
+
+    if (param_s != NULL && array_size(param_s) != size)
+    {
+        display_error(expression_location(sema, callee), "wrong number of arguments");
+        sema->errors++;
+    }
+
     for (int i = 0; i < size; i++)
     {
         expression_t argument = argument_s[i];
         expression_analysis(sema, argument);
 
-        type_t type = expression_type(argument); // TODO: check type is compatihle with function argument
-        argument_s[i] = implicit_cast(sema, argument, type);
+        type_t type = expression_type(argument);
+        if (param_s != NULL && i < array_size(param_s))
+            check_type(sema, expression_location(sema, argument), param_s[i], type, "incompatible type");
+
+        argument_s[i] = implicit_cast(sema, argument);
     }
 }
 
@@ -187,11 +229,15 @@ void assignment_analysis(sema_t sema, assignment_t assignment)
 {
     expression_t lhs = assignment_lvalue(assignment);
     expression_analysis(sema, lhs);
+    type_t type_lhs = expression_type(lhs);
 
     expression_t rhs = assignment_rvalue(assignment);
     expression_analysis(sema, rhs);
-    type_t type_rhs = expression_type(rhs); // TODO: check type is compatihle with function argument
-    assignment_set_rvalue(assignment, implicit_cast(sema, rhs, type_rhs));
+    type_t type_rhs = expression_type(rhs);
+
+    check_type(sema, expression_location(sema, lhs), type_lhs, type_rhs, "incompatible type");
+
+    assignment_set_rvalue(assignment, implicit_cast(sema, rhs));
 }
 
 static
@@ -200,12 +246,14 @@ void condition_analysis(sema_t sema, conditional_t conditional)
     expression_t lhs = conditional_lhs(conditional);
     expression_analysis(sema, lhs);
     type_t type_lhs = expression_type(lhs);
-    conditional_set_lhs(conditional, implicit_cast(sema, lhs, type_lhs));
+    check_type(sema, expression_location(sema, lhs), type_bool(), type_lhs, "incompatible type");
+    conditional_set_lhs(conditional, implicit_cast(sema, lhs));
 
     expression_t rhs = conditional_rhs(conditional);
     expression_analysis(sema, rhs);
     type_t type_rhs = expression_type(rhs);
-    conditional_set_rhs(conditional, implicit_cast(sema, rhs, type_rhs));
+    check_type(sema, expression_location(sema, rhs), type_bool(), type_rhs, "incompatible type");
+    conditional_set_rhs(conditional, implicit_cast(sema, rhs));
 }
 
 void expression_analysis(sema_t sema, expression_t expression)
@@ -227,9 +275,9 @@ void expression_analysis(sema_t sema, expression_t expression)
         case EXPRESSION_ASSIGNMENT:
             assignment_analysis(sema, ASSIGNMENT(expression));
             break;
-        case EXPRESSION_IMPLICIT_CAST:
+        case EXPRESSION_IMPLICIT_CAST: // LCOV_EXCL_LINE
             // TODO: implement
-            break;
+            break; // LCOV_EXCL_LINE
         case EXPRESSION_CONDITIONAL:
             condition_analysis(sema, CONDITIONAL(expression));
             break;
@@ -269,13 +317,18 @@ void return_analysis(sema_t sema, return_t ret)
         return;
     }
 
-    return_set_expression(ret, implicit_cast(sema, expression, expected));
+    return_set_expression(ret, implicit_cast(sema, expression));
 }
 
 static
 void if_analysis(sema_t sema, if_t ifelse)
 {
-    expression_analysis(sema, if_condition(ifelse));
+    expression_t condition = if_condition(ifelse);
+    expression_analysis(sema, condition);
+
+    type_t type = expression_type(condition);
+    check_type(sema, expression_location(sema, condition), type_bool(), type, "incompatible type");
+    if_set_condition(ifelse, implicit_cast(sema, condition));
 
     statement_analysis(sema, if_then_branch(ifelse));
 
@@ -303,13 +356,9 @@ void var_analysis(sema_t sema, var_t var)
             type_t expr_type = expression_type(initializer);
             type_t var_type = variable_type(variable);
 
-            if (!type_eq(var_type, expr_type))
-            {
-                display_error(declaration_name(declaration), "incompatible type");
-                sema->errors++;
-            }
+            check_type(sema, declaration_name(declaration), var_type, expr_type, "incompatible type");
 
-            expression_t implicit_cast_transformation = implicit_cast(sema, initializer, variable_type(variable));
+            expression_t implicit_cast_transformation = implicit_cast(sema, initializer);
             variable_set_initializer(variable, implicit_cast_transformation);
         }
 

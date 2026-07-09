@@ -383,7 +383,7 @@ type_t call_type(call_t call)
     expression_t callee = call_callee(call);
 
     type_t callee_type = expression_type(callee);
-    if (type_kind(callee_type) != TYPE_CALLABLE)
+    if (callee_type == NULL || type_kind(callee_type) != TYPE_CALLABLE)
         return NULL;
 
     callable_t callable = CALLABLE(callee_type);
@@ -468,7 +468,7 @@ conditional_t CONDITIONAL(expression_t expression)
 
 const char* binary_kind_string(binary_kind_t kind)
 {
-    switch (kind)
+    switch (kind) // LCOV_EXCL_LINE
     {
         case BINARY_ADD: return "+";
         case BINARY_SUB: return "-";
@@ -481,6 +481,7 @@ const char* binary_kind_string(binary_kind_t kind)
         case BINARY_LE:  return "<=";
         case BINARY_GT:  return ">";
         case BINARY_GE:  return ">=";
+        default: __builtin_unreachable(); // LCOV_EXCL_LINE
     }
     __builtin_unreachable();
 }

@@ -112,8 +112,8 @@ static node_t insert_node(node_t root, declaration_t declaration, node_t parent)
     span_t root_name = location_span(declaration_name(root->declaration));
     int cmp = span_cmp(decl_name, root_name);
 
-    if (cmp == 0)
-        return root;
+    if (cmp == 0) // LCOV_EXCL_LINE
+        return root; // LCOV_EXCL_LINE
 
     if (cmp < 0)
         root->lhs = insert_node(root->lhs, declaration, root);
@@ -136,7 +136,7 @@ bool scope_add(scope_t scope, declaration_t declaration)
     }
 
     scope->root = insert_node(scope->root, declaration, NULL);
-    if (scope->root)
+    if (scope->root) // LCOV_EXCL_BR_LINE (insert_node never returns NULL)
         scope->root->is_red = false;
     return true;
 }

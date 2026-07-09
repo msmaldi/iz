@@ -81,6 +81,37 @@ static void success_branch(void **arg)
 
         backend_free(backend);
     }
+
+    {
+        char *code =
+        "int choose(int n)"     LF
+        "{"                     LF
+        "    int x = 1;"        LF
+        "    if (n < 0)"        LF
+        "    {"                 LF
+        "        x = 2;"        LF
+        "    }"                 LF
+        "    else"              LF
+        "    {"                 LF
+        "        x = 3;"        LF
+        "    }"                 LF
+        "    return x;"         LF
+        "}"
+        ;
+
+        unit_t unit = syntax_analysis(source_inline(code, "if_else_no_return.iz"));
+        compilation_t compilation = semantic_analysis(array_add(array_empty(), unit));
+        backend_t backend = backend_codegen(compilation);
+        assert_non_null(backend);
+
+        assert_true(backend_validate(backend));
+        backend_dump(backend);
+        backend_emit_object(backend);
+        backend_emit_assembly(backend);
+        backend_emit_llvm(backend);
+
+        backend_free(backend);
+    }
 }
 
 int main()

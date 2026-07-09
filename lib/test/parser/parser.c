@@ -305,6 +305,86 @@ static void failure_branch(void **arg)
         assert_null(unit);
     }
 
+    // The following exercise the "invalid right-hand side" error recovery
+    // path at each binary/conditional operator precedence level.
+    {
+        char *code = "int one() return 1 * #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error026.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 / #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error027.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 % #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error028.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 + #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error029.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 - #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error030.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 < #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error031.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 > #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error032.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 <= #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error033.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 >= #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error034.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 == #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error035.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 != #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error036.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 && #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error037.iz"));
+        assert_null(unit);
+    }
+
+    {
+        char *code = "int one() return 1 || #;";
+        unit_t unit = syntax_analysis(source_inline(code, "error038.iz"));
+        assert_null(unit);
+    }
+
 }
 
 int main()

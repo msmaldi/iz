@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "common/source.h"
+#include "common/span.h"
 
 static void test_data(void **arg)
 {
@@ -50,6 +51,20 @@ static void test_data(void **arg)
         assert_int_equal(path, source_path(source));
 
         source_free(source);
+    }
+
+    {
+        source_t source = source_inline("int n;", "location.iz");
+        span_t span = span_sz("n");
+
+        location_t location = location_new(source, span, 1, 5);
+
+        assert_int_equal(source, location_source(location));
+        assert_true(span_eq(span, location_span(location)));
+        assert_int_equal(1, location_line(location));
+        assert_int_equal(5, location_column(location));
+
+        location_free(location);
     }
 
 }

@@ -246,7 +246,7 @@ LLVMTypeRef codegen_type(codegen_t codegen, type_t type)
         case TYPE_CALLABLE:
             return codegen_callable(codegen, CALLABLE(type));
     }
-    return NULL;
+    return NULL; // LCOV_EXCL_LINE
 }
 
 
@@ -267,7 +267,7 @@ LLVMValueRef codegen_constant(codegen_t codegen, constant_t constant)
             return LLVMConstInt(LLVMInt32TypeInContext(codegen->context), u64, 0);
         }
     }
-    return NULL;
+    return NULL; // LCOV_EXCL_LINE
 }
 
 LLVMValueRef codegen_identifier(codegen_t codegen, identifier_t identifier)
@@ -315,7 +315,7 @@ LLVMValueRef codegen_binary(codegen_t codegen, binary_t binary)
         case BINARY_REM:
             return LLVMBuildSRem(codegen->builder, lhs, rhs, "");
     }
-    return NULL;
+    return NULL; // LCOV_EXCL_LINE
 }
 
 LLVMValueRef codegen_call(codegen_t codegen, call_t call)
@@ -358,15 +358,15 @@ LLVMValueRef codegen_implicit_cast(codegen_t codegen, implicit_cast_t implicit_c
     LLVMTypeRef type_llvm = codegen_type(codegen, type);
     LLVMValueRef expression_llvm = codegen_expression(codegen, implicit_cast_expression(implicit_cast));
 
-    switch (implicit_cast_kind(implicit_cast))
+    switch (implicit_cast_kind(implicit_cast)) // LCOV_EXCL_BR_LINE (only one enum value exists)
     {
     case IMPLICIT_CAST_LVALUE_TO_RVALUE:
         return LLVMBuildLoad2(codegen->builder, type_llvm, expression_llvm, "");
         break;
-    default:
-        return NULL;
+    default: // LCOV_EXCL_LINE
+        return NULL; // LCOV_EXCL_LINE
     }
-    return NULL;
+    return NULL; // LCOV_EXCL_LINE
 }
 
 LLVMValueRef codegen_conditional(codegen_t codegen, conditional_t conditional)
@@ -412,7 +412,7 @@ LLVMValueRef codegen_expression(codegen_t codegen, expression_t expression)
         case EXPRESSION_CONDITIONAL:
             return codegen_conditional(codegen, CONDITIONAL(expression));
     }
-    return NULL;
+    return NULL; // LCOV_EXCL_LINE
 }
 
 

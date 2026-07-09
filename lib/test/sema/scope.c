@@ -66,6 +66,45 @@ static void success_branch(void **arg)
         declaration_free(fn_one);
         scope_free(global);
     }
+
+    {
+        // Insertion order found (by simulating insert_node/fix_up offline) to
+        // drive the red-black tree through rotate_left, rotate_right -
+        // including the case where the rotated node already has a right
+        // child - and the color-flip branch inside fix_up.
+        const char *names[] = { "a", "b", "c", "f", "g", "d", "e" };
+        size_t size = sizeof(names) / sizeof(names[0]);
+
+        scope_t scope = scope_new(NULL);
+        declaration_t declaration_s[size];
+        type_t type_s[size];
+
+        for (size_t i = 0; i < size; i++)
+        {
+            // argument_free() does not release the argument's type (that is
+            // normally done through the owning function's callable type), so
+            // since these arguments have no owning function here, the types
+            // are tracked and released separately below.
+            type_s[i] = type_int_new();
+            declaration_t argument = argument_new(type_s[i], (struct location_t){ .span = span_sz(names[i]) });
+            declaration_s[i] = argument;
+
+            assert_true(scope_add(scope, argument));
+        }
+
+        for (size_t i = 0; i < size; i++)
+        {
+            declaration_t found = scope_find(scope, span_sz(names[i]));
+            assert_int_equal(declaration_s[i], found);
+        }
+
+        scope_free(scope);
+        for (size_t i = 0; i < size; i++)
+        {
+            declaration_free(declaration_s[i]);
+            type_free(type_s[i]);
+        }
+    }
 }
 
 static void failure_branch(void **arg)
